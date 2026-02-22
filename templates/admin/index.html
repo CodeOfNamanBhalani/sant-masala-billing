@@ -1,0 +1,293 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard | Sant Masala{% endblock %}
+
+{% block body %}
+<!-- Sidebar overlay for mobile -->
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+<div class="admin-wrapper">
+    <!-- Sidebar -->
+    <aside class="admin-sidebar" id="sidebar">
+        <button class="sidebar-close-btn" onclick="closeSidebar()">
+            <i class="bi bi-x-lg"></i>
+        </button>
+        <div class="sidebar-brand">
+            <i class="bi bi-shop" style="font-size: 2rem; color: var(--accent);"></i>
+            <h2>Sant Masala</h2>
+        </div>
+        
+        <nav class="sidebar-nav">
+            <div class="nav-item">
+                <a href="/admin" class="nav-link active">
+                    <i class="bi bi-grid-1x2-fill"></i>
+                    <span data-i18n="dashboard">Dashboard</span>
+                </a>
+            </div>
+            <div class="nav-item">
+                <a href="/admin/products" class="nav-link">
+                    <i class="bi bi-box-seam-fill"></i>
+                    <span data-i18n="products">Products</span>
+                </a>
+            </div>
+            <div class="nav-item">
+                <a href="/admin/orders" class="nav-link">
+                    <i class="bi bi-cart-fill"></i>
+                    <span data-i18n="orders">Orders</span>
+                </a>
+            </div>
+            <div class="nav-item">
+                <a href="/admin/categories" class="nav-link">
+                    <i class="bi bi-tags-fill"></i>
+                    <span data-i18n="categories">Categories</span>
+                </a>
+            </div>
+            <div class="nav-item">
+                <a href="/admin/customers" class="nav-link">
+                    <i class="bi bi-people-fill"></i>
+                    <span data-i18n="customers">Customers</span>
+                </a>
+            </div>
+            <div class="nav-item">
+                <a href="/admin/settings" class="nav-link">
+                    <i class="bi bi-gear-fill"></i>
+                    <span data-i18n="settings">Settings</span>
+                </a>
+            </div>
+            <div class="nav-item" style="margin-top: 20px;">
+                <a href="/pos" class="nav-link" style="background: var(--success);">
+                    <i class="bi bi-receipt"></i>
+                    <span data-i18n="pos">Billing</span>
+                </a>
+            </div>
+        </nav>
+    </aside>
+    
+    <!-- Main Content -->
+    <main class="admin-main">
+        <!-- Header -->
+        <header class="admin-header">
+            <div class="header-left">
+                <button class="toggle-sidebar" onclick="toggleSidebar()">
+                    <i class="bi bi-list"></i>
+                </button>
+                <h1 class="page-title">
+                    <i class="bi bi-grid-1x2-fill"></i>
+                    <span data-i18n="dashboard">Dashboard</span>
+                </h1>
+            </div>
+            
+            <div class="header-right">
+                <div class="lang-switch">
+                    <button class="lang-btn active" data-lang="en">EN</button>
+                    <button class="lang-btn" data-lang="gu">ગુ</button>
+                </div>
+                
+                <button class="theme-toggle" onclick="toggleTheme()">
+                    <i class="bi bi-moon-fill"></i>
+                </button>
+                
+                <div class="user-menu">
+                    <div class="user-avatar">A</div>
+                    <span>Admin</span>
+                </div>
+            </div>
+        </header>
+        
+        <!-- Content -->
+        <div class="admin-content">
+            <!-- Stats Cards -->
+            <div class="row g-4 mb-4">
+                <div class="col-md-6 col-lg-3">
+                    <div class="stat-card">
+                        <div class="stat-icon orders">
+                            <i class="bi bi-cart-check"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="totalOrders">0</h3>
+                            <p data-i18n="total_orders">Total Orders</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6 col-lg-3">
+                    <div class="stat-card">
+                        <div class="stat-icon revenue">
+                            <i class="bi bi-currency-rupee"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="totalRevenue">₹0</h3>
+                            <p data-i18n="total_revenue">Total Revenue</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6 col-lg-3">
+                    <div class="stat-card">
+                        <div class="stat-icon products">
+                            <i class="bi bi-box-seam"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="totalProducts">0</h3>
+                            <p data-i18n="total_products">Total Products</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6 col-lg-3">
+                    <div class="stat-card">
+                        <div class="stat-icon low-stock">
+                            <i class="bi bi-exclamation-triangle"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="lowStock">0</h3>
+                            <p data-i18n="low_stock_items">Low Stock Items</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Order Status Cards -->
+            <div class="row g-4 mb-4">
+                <div class="col-12">
+                    <div class="d-flex gap-3 flex-wrap">
+                        <div class="badge-card badge-pending" style="flex: 1;">
+                            <h3 id="pendingCount">0</h3>
+                            <span data-i18n="pending">Pending</span>
+                        </div>
+                        <div class="badge-card badge-completed" style="flex: 1;">
+                            <h3 id="completedCount">0</h3>
+                            <span data-i18n="completed">Completed</span>
+                        </div>
+                        <div class="badge-card badge-cancelled" style="flex: 1;">
+                            <h3 id="cancelledCount">0</h3>
+                            <span data-i18n="cancelled">Cancelled</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Recent Orders -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="bi bi-clock-history"></i>
+                        <span data-i18n="recent_orders">Recent Orders</span>
+                    </h3>
+                    <a href="/admin/orders" class="btn btn-sm btn-outline">
+                        <span data-i18n="all">View All</span>
+                        <i class="bi bi-arrow-right"></i>
+                    </a>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th data-i18n="order_number">Order #</th>
+                                    <th data-i18n="customer">Customer</th>
+                                    <th data-i18n="amount">Amount</th>
+                                    <th data-i18n="status">Status</th>
+                                    <th data-i18n="date">Date</th>
+                                    <th data-i18n="actions">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="recentOrdersTable">
+                                <tr>
+                                    <td colspan="6" style="text-align: center; padding: 40px;">
+                                        <div class="spinner" style="margin: 0 auto;"></div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Load Dashboard Data
+    async function loadDashboard() {
+        try {
+            const data = await api.getDashboardStats();
+            
+            // Update stats
+            document.getElementById('totalOrders').textContent = data.total_orders;
+            document.getElementById('totalRevenue').textContent = formatCurrency(data.total_revenue);
+            document.getElementById('totalProducts').textContent = data.total_products;
+            document.getElementById('lowStock').textContent = data.low_stock;
+            
+            // Update status counts
+            document.getElementById('pendingCount').textContent = data.status_counts.pending;
+            document.getElementById('completedCount').textContent = data.status_counts.completed;
+            document.getElementById('cancelledCount').textContent = data.status_counts.cancelled;
+            
+            // Render recent orders
+            renderRecentOrders(data.recent_orders);
+            
+        } catch (error) {
+            console.error('Failed to load dashboard:', error);
+            showToast('Failed to load dashboard data', 'error');
+        }
+    }
+    
+    function renderRecentOrders(orders) {
+        const tbody = document.getElementById('recentOrdersTable');
+        
+        if (orders.length === 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="6" style="text-align: center; padding: 40px; color: var(--text-muted);">
+                        <i class="bi bi-inbox" style="font-size: 2rem;"></i>
+                        <p data-i18n="no_orders">No orders found</p>
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+        
+        tbody.innerHTML = orders.map(order => `
+            <tr class="fade-in">
+                <td><strong>${order.order_number}</strong></td>
+                <td>
+                    <div>${order.customer_name || 'Walk-in'}</div>
+                    <small style="color: var(--text-muted);">${order.customer_phone || ''}</small>
+                </td>
+                <td><strong>${formatCurrency(order.total)}</strong></td>
+                <td>
+                    <span class="badge badge-${getStatusClass(order.status)}">
+                        ${order.status}
+                    </span>
+                </td>
+                <td>${order.created_at}</td>
+                <td>
+                    <button class="btn btn-icon btn-primary" onclick="viewOrder(${order.id})" title="View">
+                        <i class="bi bi-eye"></i>
+                    </button>
+                </td>
+            </tr>
+        `).join('');
+    }
+    
+    function getStatusClass(status) {
+        const classes = {
+            'pending': 'warning',
+            'completed': 'success',
+            'cancelled': 'danger',
+            'processing': 'info'
+        };
+        return classes[status] || 'info';
+    }
+    
+    function viewOrder(id) {
+        window.location.href = `/admin/orders?view=${id}`;
+    }
+    
+    // Initialize
+    document.addEventListener('DOMContentLoaded', loadDashboard);
+</script>
+{% endblock %}

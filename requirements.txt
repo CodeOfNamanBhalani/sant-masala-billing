@@ -1,0 +1,11 @@
+# Sant Masala - Billing Software
+# Python Dependencies
+
+Flask==3.0.0
+Flask-SQLAlchemy==3.1.1
+Flask-CORS==4.0.0
+
+Flask-Migrate==4.0.5
+psycopg2-binary
+qrcode==7.4.2
+gunicorn==21.2.0

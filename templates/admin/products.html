@@ -1,0 +1,610 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Products | Sant Masala{% endblock %}
+
+{% block body %}
+<!-- Sidebar overlay for mobile -->
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+<div class="admin-wrapper">
+    <!-- Sidebar -->
+    <aside class="admin-sidebar" id="sidebar">
+        <button class="sidebar-close-btn" onclick="closeSidebar()">
+            <i class="bi bi-x-lg"></i>
+        </button>
+        <div class="sidebar-brand">
+            <i class="bi bi-shop" style="font-size: 2rem; color: var(--accent);"></i>
+            <h2>Sant Masala</h2>
+        </div>
+        
+        <nav class="sidebar-nav">
+            <div class="nav-item">
+                <a href="/admin" class="nav-link">
+                    <i class="bi bi-grid-1x2-fill"></i>
+                    <span data-i18n="dashboard">Dashboard</span>
+                </a>
+            </div>
+            <div class="nav-item">
+                <a href="/admin/products" class="nav-link active">
+                    <i class="bi bi-box-seam-fill"></i>
+                    <span data-i18n="products">Products</span>
+                </a>
+            </div>
+            <div class="nav-item">
+                <a href="/admin/orders" class="nav-link">
+                    <i class="bi bi-cart-fill"></i>
+                    <span data-i18n="orders">Orders</span>
+                </a>
+            </div>
+            <div class="nav-item">
+                <a href="/admin/categories" class="nav-link">
+                    <i class="bi bi-tags-fill"></i>
+                    <span data-i18n="categories">Categories</span>
+                </a>
+            </div>
+            <div class="nav-item">
+                <a href="/admin/customers" class="nav-link">
+                    <i class="bi bi-people-fill"></i>
+                    <span data-i18n="customers">Customers</span>
+                </a>
+            </div>
+            <div class="nav-item">
+                <a href="/admin/settings" class="nav-link">
+                    <i class="bi bi-gear-fill"></i>
+                    <span data-i18n="settings">Settings</span>
+                </a>
+            </div>
+            <div class="nav-item" style="margin-top: 20px;">
+                <a href="/pos" class="nav-link" style="background: var(--success);">
+                    <i class="bi bi-receipt"></i>
+                    <span data-i18n="pos">Billing</span>
+                </a>
+            </div>
+        </nav>
+    </aside>
+    
+    <!-- Main Content -->
+    <main class="admin-main">
+        <!-- Header -->
+        <header class="admin-header">
+            <div class="header-left">
+                <button class="toggle-sidebar" onclick="toggleSidebar()">
+                    <i class="bi bi-list"></i>
+                </button>
+                <h1 class="page-title">
+                    <i class="bi bi-box-seam-fill"></i>
+                    <span data-i18n="products">Products</span>
+                </h1>
+            </div>
+            
+            <div class="header-right">
+                <div class="lang-switch">
+                    <button class="lang-btn active" data-lang="en">EN</button>
+                    <button class="lang-btn" data-lang="gu">ગુ</button>
+                </div>
+                
+                <button class="theme-toggle" onclick="toggleTheme()">
+                    <i class="bi bi-moon-fill"></i>
+                </button>
+                
+                <div class="user-menu">
+                    <div class="user-avatar">A</div>
+                    <span>Admin</span>
+                </div>
+            </div>
+        </header>
+        
+        <!-- Content -->
+        <div class="admin-content">
+            <!-- Actions Bar -->
+            <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+                <div class="d-flex gap-3 flex-wrap">
+                    <div class="input-group" style="max-width: 300px;">
+                        <input type="text" class="form-control" id="searchInput" placeholder="Search products..." data-i18n-placeholder="search">
+                    </div>
+                    <select class="form-control" id="categoryFilter" style="max-width: 200px;">
+                        <option value="">All Categories</option>
+                    </select>
+                </div>
+                <button class="btn btn-primary" onclick="openAddModal()">
+                    <i class="bi bi-plus-lg"></i>
+                    <span data-i18n="add_product">Add Product</span>
+                </button>
+            </div>
+            
+            <!-- Products Table -->
+            <div class="card">
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th data-i18n="image">Image</th>
+                                    <th data-i18n="product_name">Product Name</th>
+                                    <th data-i18n="category">Category</th>
+                                    <th data-i18n="price">Price</th>
+                                    <th data-i18n="stock">Stock</th>
+                                    <th data-i18n="status">Status</th>
+                                    <th data-i18n="featured">Featured</th>
+                                    <th data-i18n="actions">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="productsTable">
+                                <tr>
+                                    <td colspan="9" style="text-align: center; padding: 40px;">
+                                        <div class="spinner" style="margin: 0 auto;"></div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<!-- Add/Edit Product Modal -->
+<div class="modal-overlay" id="productModal">
+    <div class="modal-content" style="max-width: 800px;">
+        <div class="modal-header">
+            <h3 class="modal-title" id="modalTitle">
+                <i class="bi bi-box-seam"></i>
+                <span data-i18n="add_product">Add Product</span>
+            </h3>
+            <button class="modal-close" onclick="closeModal('productModal')">
+                <i class="bi bi-x"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <form id="productForm">
+                <input type="hidden" id="productId">
+                
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="form-label" data-i18n="product_name">Product Name (English)</label>
+                            <input type="text" class="form-control" id="nameEn" required>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="form-label" data-i18n="product_name_gu">Product Name (Gujarati)</label>
+                            <input type="text" class="form-control gujarati" id="nameGu" required>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="form-label" data-i18n="category">Category</label>
+                            <select class="form-control" id="categoryId" required>
+                                <option value="">Select Category</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="form-group">
+                            <label class="form-label" data-i18n="stock">Stock</label>
+                            <input type="number" class="form-control" id="stock" value="0" min="0">
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="form-group">
+                            <label class="form-label" data-i18n="unit">Unit</label>
+                            <select class="form-control" id="unit">
+                                <option value="kg">Kilogram (kg)</option>
+                                <option value="g">Gram (g)</option>
+                                <option value="piece">Piece</option>
+                                <option value="packet">Packet</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="form-label">Description (English)</label>
+                            <textarea class="form-control" id="descEn" rows="2"></textarea>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="form-label">Description (Gujarati)</label>
+                            <textarea class="form-control gujarati" id="descGu" rows="2"></textarea>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="form-label" data-i18n="image">Product Image</label>
+                            <div class="image-upload-container">
+                                <div class="image-preview" id="imagePreview">
+                                    <img id="previewImg" src="/static/images/spice-placeholder.jpg" alt="Preview">
+                                    <div class="image-overlay">
+                                        <i class="bi bi-camera"></i>
+                                        <span>Click to upload</span>
+                                    </div>
+                                </div>
+                                <input type="file" id="imageFile" accept="image/*" style="display: none;" onchange="handleImageUpload(this)">
+                                <input type="hidden" id="image">
+                                <div class="image-actions mt-2">
+                                    <button type="button" class="btn btn-sm btn-primary" onclick="document.getElementById('imageFile').click()">
+                                        <i class="bi bi-upload"></i> Upload Image
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-secondary" onclick="toggleUrlInput()">
+                                        <i class="bi bi-link-45deg"></i> Use URL
+                                    </button>
+                                </div>
+                                <div id="urlInputContainer" style="display: none; margin-top: 10px;">
+                                    <input type="text" class="form-control" id="imageUrl" placeholder="https://..." onchange="useImageUrl(this.value)">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="form-group d-flex align-items-center gap-2" style="margin-top: 32px;">
+                            <input type="checkbox" id="isActive" checked>
+                            <label for="isActive" data-i18n="active">Active</label>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="form-group d-flex align-items-center gap-2" style="margin-top: 32px;">
+                            <input type="checkbox" id="isFeatured">
+                            <label for="isFeatured" data-i18n="featured">Featured</label>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Price Variants -->
+                <div class="form-group">
+                    <label class="form-label d-flex justify-content-between">
+                        <span data-i18n="prices_variants">Price Variants (Different weights)</span>
+                        <button type="button" class="btn btn-sm btn-success" onclick="addPriceRow()">
+                            <i class="bi bi-plus"></i> Add
+                        </button>
+                    </label>
+                    <div id="pricesContainer">
+                        <!-- Price rows will be added here -->
+                    </div>
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeModal('productModal')" data-i18n="cancel">Cancel</button>
+            <button class="btn btn-primary" onclick="saveProduct()">
+                <i class="bi bi-check-lg"></i>
+                <span data-i18n="save">Save</span>
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let products = [];
+    let categories = [];
+    
+    // Load Data
+    async function loadProducts() {
+        try {
+            const categoryId = document.getElementById('categoryFilter').value;
+            const params = categoryId ? { category_id: categoryId } : {};
+            products = await api.getProducts(params);
+            renderProducts();
+        } catch (error) {
+            console.error('Failed to load products:', error);
+            showToast('Failed to load products', 'error');
+        }
+    }
+    
+    async function loadCategories() {
+        try {
+            categories = await api.getCategories();
+            
+            // Populate filter dropdown
+            const filter = document.getElementById('categoryFilter');
+            filter.innerHTML = '<option value="">All Categories</option>' + 
+                categories.map(c => `<option value="${c.id}">${c.name_en}</option>`).join('');
+            
+            // Populate form dropdown
+            const formSelect = document.getElementById('categoryId');
+            formSelect.innerHTML = '<option value="">Select Category</option>' + 
+                categories.map(c => `<option value="${c.id}">${c.name_en} (${c.name_gu})</option>`).join('');
+                
+        } catch (error) {
+            console.error('Failed to load categories:', error);
+        }
+    }
+    
+    function renderProducts() {
+        const tbody = document.getElementById('productsTable');
+        const search = document.getElementById('searchInput').value.toLowerCase();
+        
+        let filtered = products;
+        if (search) {
+            filtered = products.filter(p => 
+                p.name_en.toLowerCase().includes(search) || 
+                p.name_gu.includes(search)
+            );
+        }
+        
+        if (filtered.length === 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="9" style="text-align: center; padding: 40px; color: var(--text-muted);">
+                        <i class="bi bi-inbox" style="font-size: 2rem;"></i>
+                        <p data-i18n="no_products">No products found</p>
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+        
+        tbody.innerHTML = filtered.map(p => {
+            const defaultPrice = p.prices.find(pr => pr.is_default) || p.prices[0];
+            const priceText = defaultPrice ? `₹${defaultPrice.price}/${defaultPrice.weight}${defaultPrice.weight_unit}` : '-';
+            
+            return `
+            <tr class="fade-in">
+                <td>${p.id}</td>
+                <td>
+                    <img src="${p.image || '/static/images/placeholder.png'}" alt="${p.name_en}" class="product-img">
+                </td>
+                <td>
+                    <strong>${p.name_en}</strong><br>
+                    <small class="gujarati" style="color: var(--text-muted);">${p.name_gu}</small>
+                </td>
+                <td>${p.category_name}</td>
+                <td><strong>${priceText}</strong></td>
+                <td>
+                    <span class="badge ${p.stock < 50 ? 'badge-danger' : 'badge-success'}">${p.stock}</span>
+                </td>
+                <td>
+                    <span class="badge ${p.is_active ? 'badge-success' : 'badge-danger'}">
+                        ${p.is_active ? 'Active' : 'Inactive'}
+                    </span>
+                </td>
+                <td>
+                    ${p.is_featured ? '<i class="bi bi-star-fill" style="color: var(--accent);"></i>' : '<i class="bi bi-star" style="color: var(--text-muted);"></i>'}
+                </td>
+                <td>
+                    <button class="btn btn-icon btn-primary" onclick="editProduct(${p.id})" title="Edit">
+                        <i class="bi bi-pencil"></i>
+                    </button>
+                    <button class="btn btn-icon btn-danger" onclick="deleteProduct(${p.id})" title="Delete">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </td>
+            </tr>
+        `}).join('');
+    }
+    
+    // Modal Functions
+    function openAddModal() {
+        document.getElementById('productId').value = '';
+        document.getElementById('productForm').reset();
+        document.getElementById('pricesContainer').innerHTML = '';
+        addPriceRow(); // Add one default row
+        document.querySelector('#modalTitle span').textContent = t('add_product');
+        openModal('productModal');
+    }
+    
+    async function editProduct(id) {
+        try {
+            const product = await api.getProduct(id);
+            
+            document.getElementById('productId').value = product.id;
+            document.getElementById('nameEn').value = product.name_en;
+            document.getElementById('nameGu').value = product.name_gu;
+            document.getElementById('categoryId').value = product.category_id;
+            document.getElementById('stock').value = product.stock;
+            document.getElementById('unit').value = product.unit;
+            document.getElementById('descEn').value = product.description_en || '';
+            document.getElementById('descGu').value = product.description_gu || '';
+            document.getElementById('image').value = product.image || '';
+            document.getElementById('isActive').checked = product.is_active;
+            document.getElementById('isFeatured').checked = product.is_featured;
+            
+            // Show image preview
+            if (product.image) {
+                document.getElementById('previewImg').src = product.image;
+                document.getElementById('imageUrl').value = product.image;
+            } else {
+                document.getElementById('previewImg').src = '/static/images/spice-placeholder.jpg';
+            }
+            
+            // Load prices
+            document.getElementById('pricesContainer').innerHTML = '';
+            product.prices.forEach(price => {
+                addPriceRow(price);
+            });
+            
+            document.querySelector('#modalTitle span').textContent = t('edit_product');
+            openModal('productModal');
+        } catch (error) {
+            showToast('Failed to load product', 'error');
+        }
+    }
+    
+    let priceRowCounter = 0;
+    function addPriceRow(price = null) {
+        priceRowCounter++;
+        const container = document.getElementById('pricesContainer');
+        const row = document.createElement('div');
+        row.className = 'price-row d-flex gap-2 mb-2 align-items-center';
+        row.id = `priceRow${priceRowCounter}`;
+        row.innerHTML = `
+            <input type="number" class="form-control" placeholder="Weight" style="width: 80px;" 
+                value="${price ? price.weight : ''}" data-field="weight" required>
+            <select class="form-control" style="width: 80px;" data-field="weight_unit">
+                <option value="g" ${price && price.weight_unit === 'g' ? 'selected' : ''}>g</option>
+                <option value="kg" ${price && price.weight_unit === 'kg' ? 'selected' : ''}>kg</option>
+                <option value="piece" ${price && price.weight_unit === 'piece' ? 'selected' : ''}>piece</option>
+            </select>
+            <input type="number" class="form-control" placeholder="Price ₹" style="width: 100px;" 
+                value="${price ? price.price : ''}" data-field="price" required>
+            <input type="number" class="form-control" placeholder="MRP ₹" style="width: 100px;" 
+                value="${price ? price.mrp || '' : ''}" data-field="mrp">
+            <label class="d-flex align-items-center gap-1">
+                <input type="radio" name="defaultPrice" data-field="is_default" ${price && price.is_default ? 'checked' : ''}>
+                Default
+            </label>
+            <button type="button" class="btn btn-icon btn-danger" onclick="removePriceRow('priceRow${priceRowCounter}')">
+                <i class="bi bi-x"></i>
+            </button>
+        `;
+        container.appendChild(row);
+    }
+    
+    function removePriceRow(rowId) {
+        const row = document.getElementById(rowId);
+        if (row) row.remove();
+    }
+    
+    async function saveProduct() {
+        try {
+            // Collect prices
+            const priceRows = document.querySelectorAll('.price-row');
+            const prices = [];
+            priceRows.forEach(row => {
+                const weight = row.querySelector('[data-field="weight"]').value;
+                const price = row.querySelector('[data-field="price"]').value;
+                if (weight && price) {
+                    prices.push({
+                        weight: parseFloat(weight),
+                        weight_unit: row.querySelector('[data-field="weight_unit"]').value,
+                        price: parseFloat(price),
+                        mrp: parseFloat(row.querySelector('[data-field="mrp"]').value) || null,
+                        is_default: row.querySelector('[data-field="is_default"]').checked
+                    });
+                }
+            });
+            
+            const data = {
+                name_en: document.getElementById('nameEn').value,
+                name_gu: document.getElementById('nameGu').value,
+                category_id: parseInt(document.getElementById('categoryId').value),
+                stock: parseInt(document.getElementById('stock').value),
+                unit: document.getElementById('unit').value,
+                description_en: document.getElementById('descEn').value,
+                description_gu: document.getElementById('descGu').value,
+                image: document.getElementById('image').value,
+                is_active: document.getElementById('isActive').checked,
+                is_featured: document.getElementById('isFeatured').checked,
+                prices: prices
+            };
+            
+            const productId = document.getElementById('productId').value;
+            
+            if (productId) {
+                await api.updateProduct(productId, data);
+            } else {
+                await api.createProduct(data);
+            }
+            
+            closeModal('productModal');
+            showToast(t('saved_success'));
+            loadProducts();
+            
+        } catch (error) {
+            showToast(t('error_occurred'), 'error');
+        }
+    }
+    
+    async function deleteProduct(id) {
+        if (await confirmAction(t('confirm_delete'))) {
+            try {
+                await api.deleteProduct(id);
+                showToast(t('deleted_success'));
+                loadProducts();
+            } catch (error) {
+                showToast(t('error_occurred'), 'error');
+            }
+        }
+    }
+    
+    // Search handler
+    document.getElementById('searchInput').addEventListener('input', debounce(renderProducts, 300));
+    document.getElementById('categoryFilter').addEventListener('change', loadProducts);
+    
+    // Image Upload Functions
+    async function handleImageUpload(input) {
+        if (input.files && input.files[0]) {
+            const file = input.files[0];
+            
+            // Show loading
+            showLoading();
+            
+            try {
+                const formData = new FormData();
+                formData.append('file', file);
+                
+                const response = await fetch('/api/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    document.getElementById('image').value = result.url;
+                    document.getElementById('previewImg').src = result.url;
+                    showToast('Image uploaded successfully');
+                } else {
+                    showToast(result.error || 'Upload failed', 'error');
+                }
+            } catch (error) {
+                console.error('Upload error:', error);
+                showToast('Failed to upload image', 'error');
+            }
+            
+            hideLoading();
+        }
+    }
+    
+    function toggleUrlInput() {
+        const container = document.getElementById('urlInputContainer');
+        container.style.display = container.style.display === 'none' ? 'block' : 'none';
+    }
+    
+    function useImageUrl(url) {
+        if (url) {
+            document.getElementById('image').value = url;
+            document.getElementById('previewImg').src = url;
+        }
+    }
+    
+    function resetImagePreview() {
+        document.getElementById('previewImg').src = '/static/images/spice-placeholder.jpg';
+        document.getElementById('image').value = '';
+        document.getElementById('imageUrl').value = '';
+        document.getElementById('imageFile').value = '';
+        document.getElementById('urlInputContainer').style.display = 'none';
+    }
+    
+    // Update openAddModal to reset image
+    const originalOpenAddModal = openAddModal;
+    openAddModal = function() {
+        resetImagePreview();
+        originalOpenAddModal();
+    };
+    
+    // Click on image preview to upload
+    document.getElementById('imagePreview').addEventListener('click', function() {
+        document.getElementById('imageFile').click();
+    });
+    
+    // Initialize
+    document.addEventListener('DOMContentLoaded', async () => {
+        await loadCategories();
+        await loadProducts();
+    });
+</script>
+{% endblock %}

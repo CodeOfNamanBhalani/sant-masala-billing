@@ -1,0 +1,364 @@
+{% extends "base.html" %}
+
+{% block title %}Settings | Sant Masala{% endblock %}
+
+{% block body %}
+<!-- Sidebar overlay for mobile -->
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+<div class="admin-wrapper">
+    <!-- Sidebar -->
+    <aside class="admin-sidebar" id="sidebar">
+        <button class="sidebar-close-btn" onclick="closeSidebar()">
+            <i class="bi bi-x-lg"></i>
+        </button>
+        <div class="sidebar-brand">
+            <i class="bi bi-shop" style="font-size: 2rem; color: var(--accent);"></i>
+            <h2>Sant Masala</h2>
+        </div>
+        
+        <nav class="sidebar-nav">
+            <div class="nav-item">
+                <a href="/admin" class="nav-link">
+                    <i class="bi bi-grid-1x2-fill"></i>
+                    <span data-i18n="dashboard">Dashboard</span>
+                </a>
+            </div>
+            <div class="nav-item">
+                <a href="/admin/products" class="nav-link">
+                    <i class="bi bi-box-seam-fill"></i>
+                    <span data-i18n="products">Products</span>
+                </a>
+            </div>
+            <div class="nav-item">
+                <a href="/admin/orders" class="nav-link">
+                    <i class="bi bi-cart-fill"></i>
+                    <span data-i18n="orders">Orders</span>
+                </a>
+            </div>
+            <div class="nav-item">
+                <a href="/admin/categories" class="nav-link">
+                    <i class="bi bi-tags-fill"></i>
+                    <span data-i18n="categories">Categories</span>
+                </a>
+            </div>
+            <div class="nav-item">
+                <a href="/admin/customers" class="nav-link">
+                    <i class="bi bi-people-fill"></i>
+                    <span data-i18n="customers">Customers</span>
+                </a>
+            </div>
+            <div class="nav-item">
+                <a href="/admin/settings" class="nav-link active">
+                    <i class="bi bi-gear-fill"></i>
+                    <span data-i18n="settings">Settings</span>
+                </a>
+            </div>
+            <div class="nav-item" style="margin-top: 20px;">
+                <a href="/pos" class="nav-link" style="background: var(--success);">
+                    <i class="bi bi-receipt"></i>
+                    <span data-i18n="pos">Billing</span>
+                </a>
+            </div>
+        </nav>
+    </aside>
+    
+    <!-- Main Content -->
+    <main class="admin-main">
+        <!-- Header -->
+        <header class="admin-header">
+            <div class="header-left">
+                <button class="toggle-sidebar" onclick="toggleSidebar()">
+                    <i class="bi bi-list"></i>
+                </button>
+                <h1 class="page-title">
+                    <i class="bi bi-gear-fill"></i>
+                    <span data-i18n="settings">Settings</span>
+                </h1>
+            </div>
+            
+            <div class="header-right">
+                <div class="lang-switch">
+                    <button class="lang-btn active" data-lang="en">EN</button>
+                    <button class="lang-btn" data-lang="gu">ગુ</button>
+                </div>
+                
+                <button class="theme-toggle" onclick="toggleTheme()">
+                    <i class="bi bi-moon-fill"></i>
+                </button>
+                
+                <div class="user-menu">
+                    <div class="user-avatar">A</div>
+                    <span>Admin</span>
+                </div>
+            </div>
+        </header>
+        
+        <!-- Content -->
+        <div class="admin-content">
+            <div class="row g-4">
+                <!-- Shop Settings -->
+                <div class="col-lg-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">
+                                <i class="bi bi-shop"></i>
+                                Shop Details
+                            </h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="form-group">
+                                <label class="form-label" data-i18n="shop_name">Shop Name (English)</label>
+                                <input type="text" class="form-control" id="shopName" placeholder="Sant Masala">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Shop Name (Gujarati)</label>
+                                <input type="text" class="form-control gujarati" id="shopNameGu" placeholder="સંત મસાલા">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" data-i18n="shop_address">Shop Address</label>
+                                <textarea class="form-control" id="shopAddress" rows="2" placeholder="Main Market, Bhavnagar - 364001"></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" data-i18n="shop_phone">Shop Phone</label>
+                                <input type="tel" class="form-control" id="shopPhone" placeholder="+91 98765 43210">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" data-i18n="gst_number">GST Number</label>
+                                <input type="text" class="form-control" id="shopGst" placeholder="Optional">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Billing Settings -->
+                <div class="col-lg-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">
+                                <i class="bi bi-receipt"></i>
+                                Billing Settings
+                            </h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="form-group">
+                                <label class="form-label" data-i18n="currency">Currency Symbol</label>
+                                <input type="text" class="form-control" id="currency" value="₹" style="width: 100px;">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" data-i18n="tax_rate">Tax Rate (%)</label>
+                                <input type="number" class="form-control" id="taxRate" value="0" min="0" max="100" style="width: 100px;">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Default Language</label>
+                                <select class="form-control" id="defaultLang" style="width: 200px;">
+                                    <option value="en">English</option>
+                                    <option value="gu">ગુજરાતી (Gujarati)</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Printer Settings -->
+                <div class="col-lg-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">
+                                <i class="bi bi-printer"></i>
+                                Printer Settings
+                            </h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="form-group">
+                                <label class="form-label" data-i18n="printer_type">Printer Connection</label>
+                                <select class="form-control" id="printerType" style="width: 200px;">
+                                    <option value="browser">Browser Print (Default)</option>
+                                    <option value="usb">USB Thermal Printer</option>
+                                    <option value="bluetooth">Bluetooth Thermal Printer</option>
+                                </select>
+                                <small class="text-muted d-block mt-1">
+                                    USB/Bluetooth requires compatible browser (Chrome/Edge)
+                                </small>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" data-i18n="printer_width">Printer Paper Width</label>
+                                <select class="form-control" id="printerWidth" style="width: 200px;">
+                                    <option value="58">58mm (32 characters)</option>
+                                    <option value="80">80mm (48 characters)</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <button class="btn btn-outline" onclick="testPrinter()">
+                                    <i class="bi bi-printer"></i>
+                                    Test Print
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- App Info -->
+                <div class="col-lg-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">
+                                <i class="bi bi-info-circle"></i>
+                                App Information
+                            </h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <strong>App Version:</strong> 1.0.0
+                            </div>
+                            <div class="mb-3">
+                                <strong>Developer:</strong> Sant Masala Billing System
+                            </div>
+                            <div class="mb-3">
+                                <strong>PWA Status:</strong> 
+                                <span id="pwaStatus" class="badge badge-info">Checking...</span>
+                            </div>
+                            <div class="mb-3">
+                                <button class="btn btn-primary" onclick="installPWA()" id="installBtn" style="display: none;">
+                                    <i class="bi bi-download"></i>
+                                    Install App
+                                </button>
+                            </div>
+                            <hr>
+                            <div class="mb-3">
+                                <button class="btn btn-danger" onclick="clearAllData()">
+                                    <i class="bi bi-trash"></i>
+                                    Clear All Data
+                                </button>
+                                <small class="text-muted d-block mt-1">
+                                    Warning: This will delete all products, orders, and customers!
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Save Button -->
+            <div class="mt-4">
+                <button class="btn btn-primary btn-lg" onclick="saveSettings()">
+                    <i class="bi bi-check-lg"></i>
+                    <span data-i18n="save_settings">Save Settings</span>
+                </button>
+            </div>
+        </div>
+    </main>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="/static/js/printer.js"></script>
+<script>
+    let settings = {};
+    let deferredPrompt = null;
+    
+    // Load Settings
+    async function loadSettings() {
+        try {
+            settings = await api.getSettings();
+            
+            // Populate form
+            document.getElementById('shopName').value = settings.shop_name || '';
+            document.getElementById('shopNameGu').value = settings.shop_name_gu || '';
+            document.getElementById('shopAddress').value = settings.shop_address || '';
+            document.getElementById('shopPhone').value = settings.shop_phone || '';
+            document.getElementById('shopGst').value = settings.shop_gst || '';
+            document.getElementById('currency').value = settings.currency || '₹';
+            document.getElementById('taxRate').value = settings.tax_rate || '0';
+            document.getElementById('defaultLang').value = settings.language || 'en';
+            document.getElementById('printerType').value = settings.printer_type || 'browser';
+            document.getElementById('printerWidth').value = settings.printer_width || '58';
+            
+            // Also update localStorage for printer
+            localStorage.setItem('printerType', settings.printer_type || 'browser');
+            
+        } catch (error) {
+            console.error('Failed to load settings:', error);
+        }
+    }
+    
+    async function saveSettings() {
+        const data = {
+            shop_name: document.getElementById('shopName').value,
+            shop_name_gu: document.getElementById('shopNameGu').value,
+            shop_address: document.getElementById('shopAddress').value,
+            shop_phone: document.getElementById('shopPhone').value,
+            shop_gst: document.getElementById('shopGst').value,
+            currency: document.getElementById('currency').value,
+            tax_rate: document.getElementById('taxRate').value,
+            language: document.getElementById('defaultLang').value,
+            printer_type: document.getElementById('printerType').value,
+            printer_width: document.getElementById('printerWidth').value
+        };
+        
+        try {
+            await api.saveSettings(data);
+            localStorage.setItem('printerType', data.printer_type);
+            showToast(t('saved_success'));
+        } catch (error) {
+            showToast(t('error_occurred'), 'error');
+        }
+    }
+    
+    function testPrinter() {
+        const printerType = document.getElementById('printerType').value;
+        localStorage.setItem('printerType', printerType);
+        ThermalPrinter.testPrint();
+    }
+    
+    function clearAllData() {
+        if (confirm('⚠️ WARNING: This will delete ALL data including products, orders, and customers. This cannot be undone!\n\nAre you absolutely sure?')) {
+            if (confirm('Please confirm again. Delete ALL data?')) {
+                // Would need a backend endpoint for this
+                showToast('Please contact administrator to clear data', 'warning');
+            }
+        }
+    }
+    
+    // PWA Install
+    window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+        document.getElementById('installBtn').style.display = 'inline-block';
+        document.getElementById('pwaStatus').textContent = 'Ready to install';
+        document.getElementById('pwaStatus').className = 'badge badge-success';
+    });
+    
+    async function installPWA() {
+        if (deferredPrompt) {
+            deferredPrompt.prompt();
+            const { outcome } = await deferredPrompt.userChoice;
+            if (outcome === 'accepted') {
+                showToast('App installed successfully!');
+                document.getElementById('installBtn').style.display = 'none';
+            }
+            deferredPrompt = null;
+        }
+    }
+    
+    // Check PWA status
+    function checkPWAStatus() {
+        if (window.matchMedia('(display-mode: standalone)').matches) {
+            document.getElementById('pwaStatus').textContent = 'Installed';
+            document.getElementById('pwaStatus').className = 'badge badge-success';
+        } else if ('serviceWorker' in navigator) {
+            document.getElementById('pwaStatus').textContent = 'Available';
+            document.getElementById('pwaStatus').className = 'badge badge-info';
+        } else {
+            document.getElementById('pwaStatus').textContent = 'Not supported';
+            document.getElementById('pwaStatus').className = 'badge badge-warning';
+        }
+    }
+    
+    // Initialize
+    document.addEventListener('DOMContentLoaded', () => {
+        loadSettings();
+        checkPWAStatus();
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,437 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Categories | Sant Masala{% endblock %}
+
+{% block body %}
+<!-- Sidebar overlay for mobile -->
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+<div class="admin-wrapper">
+    <!-- Sidebar -->
+    <aside class="admin-sidebar" id="sidebar">
+        <button class="sidebar-close-btn" onclick="closeSidebar()">
+            <i class="bi bi-x-lg"></i>
+        </button>
+        <div class="sidebar-brand">
+            <i class="bi bi-shop" style="font-size: 2rem; color: var(--accent);"></i>
+            <h2>Sant Masala</h2>
+        </div>
+        
+        <nav class="sidebar-nav">
+            <div class="nav-item">
+                <a href="/admin" class="nav-link">
+                    <i class="bi bi-grid-1x2-fill"></i>
+                    <span data-i18n="dashboard">Dashboard</span>
+                </a>
+            </div>
+            <div class="nav-item">
+                <a href="/admin/products" class="nav-link">
+                    <i class="bi bi-box-seam-fill"></i>
+                    <span data-i18n="products">Products</span>
+                </a>
+            </div>
+            <div class="nav-item">
+                <a href="/admin/orders" class="nav-link">
+                    <i class="bi bi-cart-fill"></i>
+                    <span data-i18n="orders">Orders</span>
+                </a>
+            </div>
+            <div class="nav-item">
+                <a href="/admin/categories" class="nav-link active">
+                    <i class="bi bi-tags-fill"></i>
+                    <span data-i18n="categories">Categories</span>
+                </a>
+            </div>
+            <div class="nav-item">
+                <a href="/admin/customers" class="nav-link">
+                    <i class="bi bi-people-fill"></i>
+                    <span data-i18n="customers">Customers</span>
+                </a>
+            </div>
+            <div class="nav-item">
+                <a href="/admin/settings" class="nav-link">
+                    <i class="bi bi-gear-fill"></i>
+                    <span data-i18n="settings">Settings</span>
+                </a>
+            </div>
+            <div class="nav-item" style="margin-top: 20px;">
+                <a href="/pos" class="nav-link" style="background: var(--success);">
+                    <i class="bi bi-receipt"></i>
+                    <span data-i18n="pos">Billing</span>
+                </a>
+            </div>
+        </nav>
+    </aside>
+    
+    <!-- Main Content -->
+    <main class="admin-main">
+        <!-- Header -->
+        <header class="admin-header">
+            <div class="header-left">
+                <button class="toggle-sidebar" onclick="toggleSidebar()">
+                    <i class="bi bi-list"></i>
+                </button>
+                <h1 class="page-title">
+                    <i class="bi bi-tags-fill"></i>
+                    <span data-i18n="categories">Categories</span>
+                </h1>
+            </div>
+            
+            <div class="header-right">
+                <div class="lang-switch">
+                    <button class="lang-btn active" data-lang="en">EN</button>
+                    <button class="lang-btn" data-lang="gu">ગુ</button>
+                </div>
+                
+                <button class="theme-toggle" onclick="toggleTheme()">
+                    <i class="bi bi-moon-fill"></i>
+                </button>
+                
+                <div class="user-menu">
+                    <div class="user-avatar">A</div>
+                    <span>Admin</span>
+                </div>
+            </div>
+        </header>
+        
+        <!-- Content -->
+        <div class="admin-content">
+            <!-- Actions Bar -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h5 class="mb-0">
+                    <i class="bi bi-list-ul"></i> All Categories
+                </h5>
+                <button class="btn btn-primary" onclick="openAddModal()">
+                    <i class="bi bi-plus-lg"></i>
+                    <span data-i18n="add_category">Add Category</span>
+                </button>
+            </div>
+            
+            <!-- Categories Table -->
+            <div class="card">
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Order</th>
+                                    <th data-i18n="image">Image</th>
+                                    <th data-i18n="category_name">Category Name</th>
+                                    <th data-i18n="description">Description</th>
+                                    <th data-i18n="product_count">Products</th>
+                                    <th data-i18n="status">Status</th>
+                                    <th data-i18n="actions">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="categoriesTable">
+                                <tr>
+                                    <td colspan="7" style="text-align: center; padding: 40px;">
+                                        <div class="spinner" style="margin: 0 auto;"></div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<!-- Add/Edit Category Modal -->
+<div class="modal-overlay" id="categoryModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 class="modal-title" id="modalTitle">
+                <i class="bi bi-tags"></i>
+                <span data-i18n="add_category">Add Category</span>
+            </h3>
+            <button class="modal-close" onclick="closeModal('categoryModal')">
+                <i class="bi bi-x"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <form id="categoryForm">
+                <input type="hidden" id="categoryId">
+                
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="form-label">Category Name (English)</label>
+                            <input type="text" class="form-control" id="nameEn" required>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="form-label">Category Name (Gujarati)</label>
+                            <input type="text" class="form-control gujarati" id="nameGu" required>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="form-label">Description (English)</label>
+                            <textarea class="form-control" id="descEn" rows="2"></textarea>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="form-label">Description (Gujarati)</label>
+                            <textarea class="form-control gujarati" id="descGu" rows="2"></textarea>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="form-label" data-i18n="image">Category Image</label>
+                            <div class="image-upload-container">
+                                <div class="image-preview" id="imagePreview" onclick="document.getElementById('imageFile').click()">
+                                    <img id="previewImg" src="/static/images/spice-placeholder.jpg" alt="Preview">
+                                    <div class="image-overlay">
+                                        <i class="bi bi-camera"></i>
+                                        <span>Click to upload</span>
+                                    </div>
+                                </div>
+                                <input type="file" id="imageFile" accept="image/*" style="display: none;" onchange="handleImageUpload(this)">
+                                <input type="hidden" id="image">
+                                <div class="image-actions mt-2">
+                                    <button type="button" class="btn btn-sm btn-primary" onclick="document.getElementById('imageFile').click()">
+                                        <i class="bi bi-upload"></i> Upload
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-secondary" onclick="toggleUrlInput()">
+                                        <i class="bi bi-link-45deg"></i> URL
+                                    </button>
+                                </div>
+                                <div id="urlInputContainer" style="display: none; margin-top: 10px;">
+                                    <input type="text" class="form-control" id="imageUrl" placeholder="https://..." onchange="useImageUrl(this.value)">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="form-group">
+                            <label class="form-label" data-i18n="display_order">Display Order</label>
+                            <input type="number" class="form-control" id="displayOrder" value="0" min="0">
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="form-group d-flex align-items-center gap-2" style="margin-top: 32px;">
+                            <input type="checkbox" id="isActive" checked>
+                            <label for="isActive" data-i18n="active">Active</label>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeModal('categoryModal')" data-i18n="cancel">Cancel</button>
+            <button class="btn btn-primary" onclick="saveCategory()">
+                <i class="bi bi-check-lg"></i>
+                <span data-i18n="save">Save</span>
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let categories = [];
+    
+    // Load Categories
+    async function loadCategories() {
+        try {
+            categories = await api.getCategories();
+            renderCategories();
+        } catch (error) {
+            console.error('Failed to load categories:', error);
+            showToast('Failed to load categories', 'error');
+        }
+    }
+    
+    function renderCategories() {
+        const tbody = document.getElementById('categoriesTable');
+        
+        if (categories.length === 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="7" style="text-align: center; padding: 40px; color: var(--text-muted);">
+                        <i class="bi bi-inbox" style="font-size: 2rem;"></i>
+                        <p>No categories found</p>
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+        
+        tbody.innerHTML = categories.map(c => `
+            <tr class="fade-in">
+                <td><strong>${c.display_order}</strong></td>
+                <td>
+                    <img src="${c.image || '/static/images/placeholder.png'}" alt="${c.name_en}" class="product-img">
+                </td>
+                <td>
+                    <strong>${c.name_en}</strong><br>
+                    <small class="gujarati" style="color: var(--text-muted);">${c.name_gu}</small>
+                </td>
+                <td style="max-width: 300px;">
+                    <small>${c.description_en || '-'}</small>
+                </td>
+                <td>
+                    <span class="badge badge-primary">${c.product_count} products</span>
+                </td>
+                <td>
+                    <span class="badge ${c.is_active ? 'badge-success' : 'badge-danger'}">
+                        ${c.is_active ? 'Active' : 'Inactive'}
+                    </span>
+                </td>
+                <td>
+                    <button class="btn btn-icon btn-primary" onclick="editCategory(${c.id})" title="Edit">
+                        <i class="bi bi-pencil"></i>
+                    </button>
+                    <button class="btn btn-icon btn-danger" onclick="deleteCategory(${c.id})" title="Delete">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </td>
+            </tr>
+        `).join('');
+    }
+    
+    // Modal Functions
+    function openAddModal() {
+        document.getElementById('categoryId').value = '';
+        document.getElementById('categoryForm').reset();
+        resetImagePreview();
+        document.querySelector('#modalTitle span').textContent = t('add_category');
+        openModal('categoryModal');
+    }
+    
+    async function editCategory(id) {
+        try {
+            const category = await api.getCategory(id);
+            
+            document.getElementById('categoryId').value = category.id;
+            document.getElementById('nameEn').value = category.name_en;
+            document.getElementById('nameGu').value = category.name_gu;
+            document.getElementById('descEn').value = category.description_en || '';
+            document.getElementById('descGu').value = category.description_gu || '';
+            document.getElementById('image').value = category.image || '';
+            document.getElementById('displayOrder').value = category.display_order;
+            document.getElementById('isActive').checked = category.is_active;
+            
+            // Show image preview
+            if (category.image) {
+                document.getElementById('previewImg').src = category.image;
+                document.getElementById('imageUrl').value = category.image;
+            } else {
+                document.getElementById('previewImg').src = '/static/images/spice-placeholder.jpg';
+            }
+            
+            document.querySelector('#modalTitle span').textContent = t('edit_category');
+            openModal('categoryModal');
+        } catch (error) {
+            showToast('Failed to load category', 'error');
+        }
+    }
+    
+    async function saveCategory() {
+        try {
+            const data = {
+                name_en: document.getElementById('nameEn').value,
+                name_gu: document.getElementById('nameGu').value,
+                description_en: document.getElementById('descEn').value,
+                description_gu: document.getElementById('descGu').value,
+                image: document.getElementById('image').value,
+                display_order: parseInt(document.getElementById('displayOrder').value),
+                is_active: document.getElementById('isActive').checked
+            };
+            
+            const categoryId = document.getElementById('categoryId').value;
+            
+            if (categoryId) {
+                await api.updateCategory(categoryId, data);
+            } else {
+                await api.createCategory(data);
+            }
+            
+            closeModal('categoryModal');
+            showToast(t('saved_success'));
+            loadCategories();
+            
+        } catch (error) {
+            showToast(t('error_occurred'), 'error');
+        }
+    }
+    
+    async function deleteCategory(id) {
+        if (await confirmAction(t('confirm_delete'))) {
+            try {
+                await api.deleteCategory(id);
+                showToast(t('deleted_success'));
+                loadCategories();
+            } catch (error) {
+                showToast(t('error_occurred'), 'error');
+            }
+        }
+    }
+    
+    // Image Upload Functions
+    async function handleImageUpload(input) {
+        if (input.files && input.files[0]) {
+            const file = input.files[0];
+            showLoading();
+            
+            try {
+                const formData = new FormData();
+                formData.append('file', file);
+                
+                const response = await fetch('/api/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    document.getElementById('image').value = result.url;
+                    document.getElementById('previewImg').src = result.url;
+                    showToast('Image uploaded successfully');
+                } else {
+                    showToast(result.error || 'Upload failed', 'error');
+                }
+            } catch (error) {
+                showToast('Failed to upload image', 'error');
+            }
+            
+            hideLoading();
+        }
+    }
+    
+    function toggleUrlInput() {
+        const container = document.getElementById('urlInputContainer');
+        container.style.display = container.style.display === 'none' ? 'block' : 'none';
+    }
+    
+    function useImageUrl(url) {
+        if (url) {
+            document.getElementById('image').value = url;
+            document.getElementById('previewImg').src = url;
+        }
+    }
+    
+    function resetImagePreview() {
+        document.getElementById('previewImg').src = '/static/images/spice-placeholder.jpg';
+        document.getElementById('image').value = '';
+        document.getElementById('imageUrl').value = '';
+        document.getElementById('imageFile').value = '';
+        document.getElementById('urlInputContainer').style.display = 'none';
+    }
+    
+    // Initialize
+    document.addEventListener('DOMContentLoaded', loadCategories);
+</script>
+{% endblock %}

@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="192" height="192" viewBox="0 0 192 192">
+  <rect width="192" height="192" fill="#1a1a2e" rx="24"/>
+  <circle cx="96" cy="80" r="45" fill="#e63946"/>
+  <path d="M60 75 L96 45 L132 75" stroke="#ffd700" stroke-width="6" fill="none"/>
+  <circle cx="96" cy="85" r="20" fill="#ffd700"/>
+  <text x="96" y="160" font-family="Arial" font-size="20" fill="#ffffff" text-anchor="middle" font-weight="bold">SANT</text>
+  <text x="96" y="180" font-family="Arial" font-size="14" fill="#ffd700" text-anchor="middle">MASALA</text>
+</svg>

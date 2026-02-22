@@ -1,0 +1,93 @@
+{
+    "name": "Sant Masala Billing",
+    "short_name": "Sant Masala",
+    "description": "Grocery Store Billing Software with Thermal Printer Support - Bilingual (English & Gujarati)",
+    "start_url": "/pos",
+    "display": "standalone",
+    "background_color": "#1a1a2e",
+    "theme_color": "#e63946",
+    "orientation": "any",
+    "categories": ["business", "productivity"],
+    "icons": [
+        {
+            "src": "/static/icons/icon-72.png",
+            "sizes": "72x72",
+            "type": "image/png",
+            "purpose": "maskable any"
+        },
+        {
+            "src": "/static/icons/icon-96.png",
+            "sizes": "96x96",
+            "type": "image/png",
+            "purpose": "maskable any"
+        },
+        {
+            "src": "/static/icons/icon-128.png",
+            "sizes": "128x128",
+            "type": "image/png",
+            "purpose": "maskable any"
+        },
+        {
+            "src": "/static/icons/icon-144.png",
+            "sizes": "144x144",
+            "type": "image/png",
+            "purpose": "maskable any"
+        },
+        {
+            "src": "/static/icons/icon-152.png",
+            "sizes": "152x152",
+            "type": "image/png",
+            "purpose": "maskable any"
+        },
+        {
+            "src": "/static/icons/icon-192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "maskable any"
+        },
+        {
+            "src": "/static/icons/icon-384.png",
+            "sizes": "384x384",
+            "type": "image/png",
+            "purpose": "maskable any"
+        },
+        {
+            "src": "/static/icons/icon-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "maskable any"
+        }
+    ],
+    "shortcuts": [
+        {
+            "name": "New Bill",
+            "short_name": "Billing",
+            "description": "Create a new bill",
+            "url": "/pos",
+            "icons": [{ "src": "/static/icons/icon-96.png", "sizes": "96x96" }]
+        },
+        {
+            "name": "Admin Dashboard",
+            "short_name": "Admin",
+            "description": "Manage products and orders",
+            "url": "/admin",
+            "icons": [{ "src": "/static/icons/icon-96.png", "sizes": "96x96" }]
+        }
+    ],
+    "screenshots": [
+        {
+            "src": "/static/screenshots/pos.png",
+            "sizes": "1280x720",
+            "type": "image/png",
+            "form_factor": "wide",
+            "label": "Billing Interface"
+        },
+        {
+            "src": "/static/screenshots/admin.png",
+            "sizes": "1280x720",
+            "type": "image/png",
+            "form_factor": "wide",
+            "label": "Admin Dashboard"
+        }
+    ]
+}
