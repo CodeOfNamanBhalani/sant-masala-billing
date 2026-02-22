@@ -862,6 +862,6 @@ def init_db():
         print("Database initialized successfully!")
 
 
-if __name__ == '__main__':
-    init_db()
-    app.run()
+# if __name__ == '__main__':
+#     init_db()
+#     app.run()
