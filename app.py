@@ -20,7 +20,7 @@ CORS(app)
 
 # Configuration
 app.config['SECRET_KEY'] = 'sant-masala-secret-key-2026'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres.raxfzrqlqsvrcskcgtbl:santmasala-billing@aws-1-ap-south-1.pooler.supabase.com:5432/postgres?sslmode=require'
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get("DATABASE_URL")
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['UPLOAD_FOLDER'] = 'static/uploads'
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
