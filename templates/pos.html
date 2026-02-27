@@ -5,15 +5,16 @@
 {% block extra_css %}
 <style>
     /* Prevent horizontal scroll */
-    html, body {
+    html,
+    body {
         overflow-x: hidden;
         max-width: 100vw;
     }
-    
+
     body {
         overflow-y: hidden;
     }
-    
+
     /* Cart overlay for mobile */
     .cart-overlay {
         position: fixed;
@@ -29,13 +30,14 @@
         backdrop-filter: blur(4px);
         -webkit-backdrop-filter: blur(4px);
     }
-    
+
     .cart-overlay.active {
         opacity: 1;
         visibility: visible;
     }
-    
+
     @media (min-width: 1201px) {
+
         .mobile-cart-btn,
         .cart-overlay,
         .cart-close-btn {
@@ -82,21 +84,22 @@
                 </button>
             </div>
         </header>
-        
+
         <!-- Category Tabs -->
         <div class="category-tabs" id="categoryTabs">
             <button class="category-tab active" data-id="all" onclick="filterCategory('all')">All</button>
             <!-- Categories loaded dynamically -->
         </div>
-        
+
         <!-- Search -->
         <div class="product-search">
             <div class="search-wrapper">
                 <i class="bi bi-search"></i>
-                <input type="text" class="search-input" id="productSearch" placeholder="Search products..." data-i18n-placeholder="search">
+                <input type="text" class="search-input" id="productSearch" placeholder="Search products..."
+                    data-i18n-placeholder="search">
             </div>
         </div>
-        
+
         <!-- Product Grid -->
         <div class="product-grid" id="productGrid">
             <!-- Products loaded dynamically -->
@@ -106,7 +109,7 @@
             </div>
         </div>
     </div>
-    
+
     <!-- Cart Section -->
     <div class="pos-cart" id="posCart">
         <div class="cart-header">
@@ -116,7 +119,8 @@
                 <span class="badge badge-primary ms-2" id="cartCount">0</span>
             </h2>
             <div class="d-flex gap-2 align-items-center">
-                <button class="btn btn-sm" style="background: rgba(255,255,255,0.2); color: #fff;" onclick="clearCart()">
+                <button class="btn btn-sm" style="background: rgba(255,255,255,0.2); color: #fff;"
+                    onclick="clearCart()">
                     <i class="bi bi-trash"></i>
                     <span data-i18n="clear_cart">Clear</span>
                 </button>
@@ -125,19 +129,21 @@
                 </button>
             </div>
         </div>
-        
+
         <!-- Customer Info -->
         <div style="padding: 12px 16px; background: var(--bg-tertiary);">
             <div class="row g-2">
                 <div class="col-6">
-                    <input type="text" class="form-control form-control-sm" id="customerName" placeholder="Customer Name" data-i18n-placeholder="customer_name">
+                    <input type="text" class="form-control form-control-sm" id="customerName"
+                        placeholder="Customer Name" data-i18n-placeholder="customer_name">
                 </div>
                 <div class="col-6">
-                    <input type="tel" class="form-control form-control-sm" id="customerPhone" placeholder="Phone" data-i18n-placeholder="phone">
+                    <input type="tel" class="form-control form-control-sm" id="customerPhone" placeholder="Phone"
+                        data-i18n-placeholder="phone">
                 </div>
             </div>
         </div>
-        
+
         <!-- Cart Items -->
         <div class="cart-items" id="cartItems">
             <div style="text-align: center; padding: 40px; color: var(--text-muted);">
@@ -146,7 +152,7 @@
                 <small>Click products to add</small>
             </div>
         </div>
-        
+
         <!-- Cart Summary -->
         <div class="cart-summary">
             <div class="summary-row">
@@ -156,8 +162,8 @@
             <div class="summary-row">
                 <div class="d-flex align-items-center gap-2">
                     <span data-i18n="discount">Discount</span>
-                    <input type="number" class="form-control form-control-sm" id="discountInput" 
-                        value="0" min="0" style="width: 70px; padding: 4px 8px;" onchange="updateTotals()">
+                    <input type="number" class="form-control form-control-sm" id="discountInput" value="0" min="0"
+                        style="width: 70px; padding: 4px 8px;" onchange="updateTotals()">
                     <span>₹</span>
                 </div>
                 <span id="discountAmount" style="color: var(--success);">-₹0.00</span>
@@ -167,11 +173,12 @@
                 <span id="grandTotal" style="color: var(--primary);">₹0.00</span>
             </div>
         </div>
-        
+
         <!-- Payment Method -->
         <div style="padding: 12px 16px; background: var(--bg-tertiary);">
             <div class="d-flex gap-2">
-                <button class="btn btn-sm flex-fill payment-btn active" data-method="cash" onclick="selectPayment('cash')">
+                <button class="btn btn-sm flex-fill payment-btn active" data-method="cash"
+                    onclick="selectPayment('cash')">
                     <i class="bi bi-cash"></i> Cash
                 </button>
                 <button class="btn btn-sm flex-fill payment-btn" data-method="upi" onclick="selectPayment('upi')">
@@ -182,10 +189,11 @@
                 </button>
             </div>
         </div>
-        
+
         <!-- Cart Actions -->
         <div class="cart-actions">
-            <button class="btn btn-secondary" onclick="showHeldOrders()" title="Hold current order or retrieve a held order">
+            <button class="btn btn-secondary" onclick="showHeldOrders()"
+                title="Hold current order or retrieve a held order">
                 <i class="bi bi-pause-circle"></i>
                 <span data-i18n="hold">Hold</span>
             </button>
@@ -221,7 +229,8 @@
                     <button class="btn btn-icon btn-primary" onclick="changeQty(-1)">
                         <i class="bi bi-dash"></i>
                     </button>
-                    <input type="number" class="form-control text-center" id="modalQty" value="1" min="1" style="width: 80px;">
+                    <input type="number" class="form-control text-center" id="modalQty" value="1" min="1"
+                        style="width: 80px;">
                     <button class="btn btn-icon btn-primary" onclick="changeQty(1)">
                         <i class="bi bi-plus"></i>
                     </button>
@@ -313,7 +322,7 @@
     let selectedPrice = null;
     let paymentMethod = 'cash';
     let lastOrder = null;
-    
+
     // Load Data
     async function loadCategories() {
         try {
@@ -332,7 +341,7 @@
             console.error('Failed to load categories:', error);
         }
     }
-    
+
     async function loadProducts() {
         try {
             products = await api.getProducts({ active: true });
@@ -347,24 +356,24 @@
             `;
         }
     }
-    
+
     function renderProducts(categoryFilter = null, searchTerm = '') {
         const grid = document.getElementById('productGrid');
-        
+
         let filtered = products;
-        
+
         if (categoryFilter && categoryFilter !== 'all') {
             filtered = filtered.filter(p => p.category_id === categoryFilter);
         }
-        
+
         if (searchTerm) {
             const search = searchTerm.toLowerCase();
-            filtered = filtered.filter(p => 
-                p.name_en.toLowerCase().includes(search) || 
+            filtered = filtered.filter(p =>
+                p.name_en.toLowerCase().includes(search) ||
                 p.name_gu.includes(search)
             );
         }
-        
+
         if (filtered.length === 0) {
             grid.innerHTML = `
                 <div style="grid-column: 1/-1; text-align: center; padding: 40px; color: var(--text-muted);">
@@ -374,13 +383,13 @@
             `;
             return;
         }
-        
+
         const lang = getCurrentLang();
         grid.innerHTML = filtered.map(p => {
             const defaultPrice = p.prices.find(pr => pr.is_default) || p.prices[0];
             const priceText = defaultPrice ? `₹${defaultPrice.price}` : '-';
             const weightText = defaultPrice ? `/${defaultPrice.weight}${defaultPrice.weight_unit}` : '';
-            
+
             return `
             <div class="product-card" onclick="selectProduct(${p.id})">
                 <img src="${p.image || '/static/images/spice-placeholder.jpg'}" alt="${p.name_en}" class="product-card-img" 
@@ -393,21 +402,21 @@
             </div>
         `}).join('');
     }
-    
+
     function filterCategory(categoryId) {
         // Update active tab
         document.querySelectorAll('.category-tab').forEach(tab => {
             tab.classList.toggle('active', tab.dataset.id == categoryId);
         });
-        
-        renderProducts(categoryId === 'all' ? null : categoryId, document.getElementById('productSearch').value);
+
+        renderProducts(categoryId === 'all' ? null : parseInt(categoryId), document.getElementById('productSearch').value);
     }
-    
+
     // Product Selection
     function selectProduct(productId) {
         selectedProduct = products.find(p => p.id === productId);
         if (!selectedProduct) return;
-        
+
         const lang = getCurrentLang();
         document.getElementById('weightModalTitle').textContent = t('select_weight');
         document.getElementById('weightModalProduct').innerHTML = `
@@ -417,7 +426,7 @@
                 ${lang === 'gu' ? selectedProduct.name_en : selectedProduct.name_gu}
             </small>
         `;
-        
+
         // Render weight options
         const optionsContainer = document.getElementById('weightOptions');
         optionsContainer.innerHTML = selectedProduct.prices.map((price, index) => `
@@ -426,42 +435,42 @@
                 ${price.weight}${price.weight_unit} - ₹${price.price}
             </button>
         `).join('');
-        
+
         // Select first by default
         if (selectedProduct.prices.length > 0) {
             selectedPrice = selectedProduct.prices[0];
         }
-        
+
         document.getElementById('modalQty').value = 1;
         openModal('weightModal');
     }
-    
+
     function selectWeight(priceId) {
         selectedPrice = selectedProduct.prices.find(p => p.id === priceId);
-        
+
         // Update button styles
         document.querySelectorAll('.weight-option').forEach(btn => {
             const isPrimary = parseInt(btn.dataset.priceId) === priceId;
             btn.className = `btn ${isPrimary ? 'btn-primary' : 'btn-outline'} weight-option`;
         });
     }
-    
+
     function changeQty(delta) {
         const input = document.getElementById('modalQty');
         const newVal = Math.max(1, parseInt(input.value) + delta);
         input.value = newVal;
     }
-    
+
     function confirmAddToCart() {
         if (!selectedProduct || !selectedPrice) return;
-        
+
         const qty = parseInt(document.getElementById('modalQty').value);
-        
+
         // Check if already in cart with same price
-        const existingIndex = cart.findIndex(item => 
+        const existingIndex = cart.findIndex(item =>
             item.product_id === selectedProduct.id && item.price_id === selectedPrice.id
         );
-        
+
         if (existingIndex >= 0) {
             cart[existingIndex].quantity += qty;
             cart[existingIndex].total = cart[existingIndex].quantity * cart[existingIndex].price;
@@ -478,16 +487,16 @@
                 total: qty * selectedPrice.price
             });
         }
-        
+
         closeModal('weightModal');
         renderCart();
         showToast(`${selectedProduct.name_en} added to cart`);
     }
-    
+
     // Cart Functions
     function renderCart() {
         const container = document.getElementById('cartItems');
-        
+
         if (cart.length === 0) {
             container.innerHTML = `
                 <div style="text-align: center; padding: 40px; color: var(--text-muted);">
@@ -499,7 +508,7 @@
             updateTotals();
             return;
         }
-        
+
         const lang = getCurrentLang();
         container.innerHTML = cart.map((item, index) => `
             <div class="cart-item fade-in">
@@ -525,10 +534,10 @@
                 </div>
             </div>
         `).join('');
-        
+
         updateTotals();
     }
-    
+
     function updateCartQty(index, delta) {
         const newQty = cart[index].quantity + delta;
         if (newQty <= 0) {
@@ -539,12 +548,12 @@
             renderCart();
         }
     }
-    
+
     function removeFromCart(index) {
         cart.splice(index, 1);
         renderCart();
     }
-    
+
     function clearCart() {
         if (cart.length === 0) return;
         if (confirm(t('confirm_delete'))) {
@@ -552,17 +561,17 @@
             renderCart();
         }
     }
-    
+
     function updateTotals() {
         const subtotal = cart.reduce((sum, item) => sum + item.total, 0);
         const discount = parseFloat(document.getElementById('discountInput').value) || 0;
         const total = Math.max(0, subtotal - discount);
-        
+
         document.getElementById('subtotal').textContent = `₹${subtotal.toFixed(2)}`;
         document.getElementById('discountAmount').textContent = `-₹${discount.toFixed(2)}`;
         document.getElementById('grandTotal').textContent = `₹${total.toFixed(2)}`;
         document.getElementById('payAmount').textContent = `₹${total.toFixed(0)}`;
-        
+
         // Update cart count
         const count = cart.reduce((sum, item) => sum + item.quantity, 0);
         document.getElementById('cartCount').textContent = count;
@@ -571,7 +580,7 @@
         const floatCount = document.getElementById('cartCountFloat');
         if (floatCount) floatCount.textContent = count;
     }
-    
+
     // Payment
     function selectPayment(method) {
         paymentMethod = method;
@@ -580,17 +589,17 @@
             btn.classList.toggle('btn-primary', btn.dataset.method === method);
         });
     }
-    
+
     async function completeOrder() {
         if (cart.length === 0) {
             showToast('Cart is empty', 'warning');
             return;
         }
-        
+
         const subtotal = cart.reduce((sum, item) => sum + item.total, 0);
         const discount = parseFloat(document.getElementById('discountInput').value) || 0;
         const total = Math.max(0, subtotal - discount);
-        
+
         const orderData = {
             customer_name: document.getElementById('customerName').value || null,
             customer_phone: document.getElementById('customerPhone').value || null,
@@ -604,23 +613,23 @@
             payment_status: 'paid',
             status: 'completed'
         };
-        
+
         try {
             showLoading();
             lastOrder = await api.createOrder(orderData);
             hideLoading();
-            
+
             document.getElementById('completedOrderNumber').textContent = `Order #${lastOrder.order_number}`;
             document.getElementById('completedOrderTotal').textContent = `₹${lastOrder.total.toFixed(2)}`;
-            
+
             openModal('printModal');
-            
+
         } catch (error) {
             hideLoading();
             showToast('Failed to create order', 'error');
         }
     }
-    
+
     function holdOrder() {
         if (cart.length === 0) return;
         // Save to local storage for later
@@ -631,24 +640,24 @@
             discount: document.getElementById('discountInput').value,
             timestamp: new Date().toISOString()
         };
-        
+
         let heldOrders = JSON.parse(localStorage.getItem('heldOrders') || '[]');
         heldOrders.push(holdData);
         localStorage.setItem('heldOrders', JSON.stringify(heldOrders));
-        
+
         showToast(t('order_held'));
         newOrder();
     }
-    
+
     function holdCurrentOrder() {
         holdOrder();
         closeModal('heldOrdersModal');
     }
-    
+
     function showHeldOrders() {
         let heldOrders = JSON.parse(localStorage.getItem('heldOrders') || '[]');
         const listContainer = document.getElementById('heldOrdersList');
-        
+
         if (heldOrders.length === 0) {
             listContainer.innerHTML = `
                 <div style="text-align: center; padding: 40px 20px; color: var(--text-muted);">
@@ -663,7 +672,7 @@
                 const subtotal = order.cart.reduce((sum, item) => sum + item.total, 0);
                 const total = subtotal - (parseFloat(order.discount) || 0);
                 const timestamp = new Date(order.timestamp).toLocaleString();
-                
+
                 return `
                     <div style="background: var(--bg-tertiary); border-radius: 12px; padding: 16px; margin-bottom: 12px;">
                         <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 12px;">
@@ -689,32 +698,32 @@
             }).join('');
             document.getElementById('holdCurrentOrderBtn').style.display = 'flex';
         }
-        
+
         openModal('heldOrdersModal');
     }
-    
+
     function retrieveHeldOrder(index) {
         let heldOrders = JSON.parse(localStorage.getItem('heldOrders') || '[]');
         if (index < 0 || index >= heldOrders.length) return;
-        
+
         const holdData = heldOrders[index];
         cart = holdData.cart;
         document.getElementById('customerName').value = holdData.customer_name || '';
         document.getElementById('customerPhone').value = holdData.customer_phone || '';
         document.getElementById('discountInput').value = holdData.discount || 0;
-        
+
         // Remove from held orders
         heldOrders.splice(index, 1);
         localStorage.setItem('heldOrders', JSON.stringify(heldOrders));
-        
+
         renderCart();
         closeModal('heldOrdersModal');
         showToast('Order retrieved');
     }
-    
+
     async function printReceipt() {
         if (!lastOrder) return;
-        
+
         try {
             const receiptData = await api.getReceiptData(lastOrder.id);
             ThermalPrinter.printReceipt(receiptData);
@@ -724,7 +733,7 @@
             window.print();
         }
     }
-    
+
     function newOrder() {
         closeModal('printModal');
         closeCart();
@@ -734,7 +743,7 @@
         document.getElementById('discountInput').value = 0;
         renderCart();
     }
-    
+
     // Mobile cart toggle
     function toggleCart() {
         const cart = document.getElementById('posCart');
@@ -742,21 +751,21 @@
         cart.classList.toggle('active');
         overlay.classList.toggle('active');
     }
-    
+
     function closeCart() {
         const cart = document.getElementById('posCart');
         const overlay = document.getElementById('cartOverlay');
         cart.classList.remove('active');
         overlay.classList.remove('active');
     }
-    
+
     // Search handler
     document.getElementById('productSearch').addEventListener('input', debounce((e) => {
         const activeTab = document.querySelector('.category-tab.active');
         const categoryId = activeTab ? activeTab.dataset.id : 'all';
         renderProducts(categoryId === 'all' ? null : parseInt(categoryId), e.target.value);
     }, 300));
-    
+
     // Language handler
     document.querySelectorAll('.lang-btn').forEach(btn => {
         btn.addEventListener('click', () => {
@@ -765,7 +774,7 @@
             renderProducts();  // Re-render products with new language
         });
     });
-    
+
     // Check for print parameter
     function checkPrintParam() {
         const params = new URLSearchParams(window.location.search);
@@ -777,7 +786,7 @@
             });
         }
     }
-    
+
     // Initialize — use IIFE since DOMContentLoaded may have already fired
     // when this inline script runs (scripts are at end of body)
     (async () => {
