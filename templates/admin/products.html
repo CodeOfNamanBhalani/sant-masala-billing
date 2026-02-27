@@ -195,7 +195,7 @@
                     <div class="col-md-3">
                         <div class="form-group">
                             <label class="form-label" data-i18n="unit">Unit</label>
-                            <select class="form-control" id="unit">
+                            <select class="form-control" id="unit" onchange="onUnitChange()">
                                 <option value="kg">Kilogram (kg)</option>
                                 <option value="g">Gram (g)</option>
                                 <option value="piece">Piece</option>
@@ -265,10 +265,19 @@
                     </div>
                 </div>
 
-                <!-- Price Variants -->
-                <div class="form-group">
+                <!-- Price per kg (for weight-based products: kg / g) -->
+                <div class="form-group" id="pricePerKgSection">
+                    <label class="form-label">Price per 1 kg (₹) <span
+                            style="color:var(--text-muted);font-weight:400;font-size:0.85em;">— used to calculate any
+                            weight automatically</span></label>
+                    <input type="number" class="form-control" id="pricePerKg" min="0" step="0.01"
+                        placeholder="e.g. 200 means ₹200 per kg">
+                </div>
+
+                <!-- Price Variants (for piece / packet) -->
+                <div class="form-group" id="priceVariantsSection" style="display:none;">
                     <label class="form-label d-flex justify-content-between">
-                        <span data-i18n="prices_variants">Price Variants (Different weights)</span>
+                        <span data-i18n="prices_variants">Price Variants (Piece / Packet sizes)</span>
                         <button type="button" class="btn btn-sm btn-success" onclick="addPriceRow()">
                             <i class="bi bi-plus"></i> Add
                         </button>
@@ -352,8 +361,14 @@
         }
 
         tbody.innerHTML = filtered.map(p => {
-            const defaultPrice = p.prices.find(pr => pr.is_default) || p.prices[0];
-            const priceText = defaultPrice ? `₹${defaultPrice.price}/${defaultPrice.weight}${defaultPrice.weight_unit}` : '-';
+            const isKgProduct = (p.unit === 'kg' || p.unit === 'g') && p.price_per_kg;
+            let priceText;
+            if (isKgProduct) {
+                priceText = `₹${p.price_per_kg}/kg`;
+            } else {
+                const defaultPrice = p.prices.find(pr => pr.is_default) || p.prices[0];
+                priceText = defaultPrice ? `₹${defaultPrice.price}/${defaultPrice.weight}${defaultPrice.weight_unit}` : '-';
+            }
 
             return `
             <tr class="fade-in">
@@ -391,11 +406,20 @@
     }
 
     // Modal Functions
+    // Show/hide pricing sections based on unit
+    function onUnitChange() {
+        const unit = document.getElementById('unit').value;
+        const isWeightBased = unit === 'kg' || unit === 'g';
+        document.getElementById('pricePerKgSection').style.display = isWeightBased ? 'block' : 'none';
+        document.getElementById('priceVariantsSection').style.display = isWeightBased ? 'none' : 'block';
+    }
+
     function openAddModal() {
         document.getElementById('productId').value = '';
         document.getElementById('productForm').reset();
         document.getElementById('pricesContainer').innerHTML = '';
-        addPriceRow(); // Add one default row
+        // Default unit is kg — show price_per_kg section
+        onUnitChange();
         document.querySelector('#modalTitle span').textContent = t('add_product');
         openModal('productModal');
     }
@@ -424,11 +448,17 @@
                 document.getElementById('previewImg').src = '/static/images/spice-placeholder.jpg';
             }
 
-            // Load prices
-            document.getElementById('pricesContainer').innerHTML = '';
-            product.prices.forEach(price => {
-                addPriceRow(price);
-            });
+            // Show correct pricing section
+            onUnitChange();
+
+            // Populate price_per_kg or variant rows
+            const isWeightBased = product.unit === 'kg' || product.unit === 'g';
+            if (isWeightBased) {
+                document.getElementById('pricePerKg').value = product.price_per_kg || '';
+            } else {
+                document.getElementById('pricesContainer').innerHTML = '';
+                product.prices.forEach(price => { addPriceRow(price); });
+            }
 
             document.querySelector('#modalTitle span').textContent = t('edit_product');
             openModal('productModal');
@@ -474,29 +504,45 @@
 
     async function saveProduct() {
         try {
-            // Collect prices
-            const priceRows = document.querySelectorAll('.price-row');
-            const prices = [];
-            priceRows.forEach(row => {
-                const weight = row.querySelector('[data-field="weight"]').value;
-                const price = row.querySelector('[data-field="price"]').value;
-                if (weight && price) {
-                    prices.push({
-                        weight: parseFloat(weight),
-                        weight_unit: row.querySelector('[data-field="weight_unit"]').value,
-                        price: parseFloat(price),
-                        mrp: parseFloat(row.querySelector('[data-field="mrp"]').value) || null,
-                        is_default: row.querySelector('[data-field="is_default"]').checked
-                    });
+            const unit = document.getElementById('unit').value;
+            const isWeightBased = unit === 'kg' || unit === 'g';
+
+            let pricePerKg = null;
+            let prices = [];
+
+            if (isWeightBased) {
+                // Weight-based: only need price_per_kg
+                const ppk = parseFloat(document.getElementById('pricePerKg').value);
+                if (!ppk || ppk <= 0) {
+                    showToast('Please enter a valid price per kg', 'error');
+                    return;
                 }
-            });
+                pricePerKg = ppk;
+            } else {
+                // Piece / packet: collect variant rows
+                const priceRows = document.querySelectorAll('.price-row');
+                priceRows.forEach(row => {
+                    const weight = row.querySelector('[data-field="weight"]').value;
+                    const price = row.querySelector('[data-field="price"]').value;
+                    if (weight && price) {
+                        prices.push({
+                            weight: parseFloat(weight),
+                            weight_unit: row.querySelector('[data-field="weight_unit"]').value,
+                            price: parseFloat(price),
+                            mrp: parseFloat(row.querySelector('[data-field="mrp"]').value) || null,
+                            is_default: row.querySelector('[data-field="is_default"]').checked
+                        });
+                    }
+                });
+            }
 
             const data = {
                 name_en: document.getElementById('nameEn').value,
                 name_gu: document.getElementById('nameGu').value,
                 category_id: parseInt(document.getElementById('categoryId').value),
                 stock: parseInt(document.getElementById('stock').value),
-                unit: document.getElementById('unit').value,
+                unit: unit,
+                price_per_kg: pricePerKg,
                 description_en: document.getElementById('descEn').value,
                 description_gu: document.getElementById('descGu').value,
                 image: document.getElementById('image').value,

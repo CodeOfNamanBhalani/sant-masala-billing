@@ -632,20 +632,24 @@ def create_order():
     # Add order items
     for item_data in data.get('items', []):
         product = Product.query.get(item_data.get('product_id'))
+        weight = item_data.get('weight')
+        weight_unit = item_data.get('weight_unit', 'kg')
+        quantity = item_data.get('quantity', 1)
         price = item_data.get('price')
         total = item_data.get('total')
-        weight = item_data.get('weight')
-        weight_unit = item_data.get('weight_unit')
-        quantity = item_data.get('quantity', 1)
-        # Weight-based calculation
+
+        # Weight-based products (kg / g unit): price = price_per_kg, total = price_per_kg × weight_in_kg
         if product and product.unit in ['kg', 'g'] and product.price_per_kg:
+            price = product.price_per_kg  # always price per 1 kg
             if weight_unit == 'kg':
-                total = product.price_per_kg * (weight or 1)
-                price = product.price_per_kg
+                weight_kg = float(weight or 1)
             elif weight_unit == 'g':
-                total = product.price_per_kg * ((weight or 1) / 1000)
-                price = product.price_per_kg / 1000
-        # Piece-based calculation (unchanged)
+                weight_kg = float(weight or 1000) / 1000.0
+            else:
+                weight_kg = float(weight or 1)
+            total = round(product.price_per_kg * weight_kg, 2)
+            quantity = 1  # weight-based items always have quantity = 1
+
         item = OrderItem(
             order_id=order.id,
             product_id=item_data.get('product_id'),
@@ -658,10 +662,18 @@ def create_order():
             total=total
         )
         db.session.add(item)
+
         # Update stock
         if product:
             if product.unit in ['kg', 'g']:
-                product.stock = max(0, product.stock - (weight or 1))
+                # Deduct in kg
+                if weight_unit == 'kg':
+                    deduct_kg = float(weight or 1)
+                elif weight_unit == 'g':
+                    deduct_kg = float(weight or 1000) / 1000.0
+                else:
+                    deduct_kg = float(weight or 1)
+                product.stock = max(0, product.stock - deduct_kg)
             else:
                 product.stock = max(0, product.stock - quantity)
     
