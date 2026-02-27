@@ -429,20 +429,28 @@
 
         // Render weight options
         const optionsContainer = document.getElementById('weightOptions');
-        optionsContainer.innerHTML = selectedProduct.prices.map((price, index) => `
-            <button class="btn ${index === 0 ? 'btn-primary' : 'btn-outline'} weight-option" 
-                onclick="selectWeight(${price.id})" data-price-id="${price.id}">
-                ${price.weight}${price.weight_unit} - ₹${price.price}
-            </button>
-        `).join('');
-
-        // Select first by default
-        if (selectedProduct.prices.length > 0) {
+        if (selectedProduct.prices && selectedProduct.prices.length > 0) {
+            optionsContainer.innerHTML = selectedProduct.prices.map((price, index) => `
+                <button class="btn ${index === 0 ? 'btn-primary' : 'btn-outline'} weight-option" 
+                    onclick="selectWeight(${price.id})" data-price-id="${price.id}">
+                    ${price.weight}${price.weight_unit} - &#x20B9;${price.price}
+                </button>
+            `).join('');
+            // Always auto-select the first price
             selectedPrice = selectedProduct.prices[0];
+        } else {
+            // No price variants — show warning, use fallback so button still works
+            optionsContainer.innerHTML = `
+                <small style="color:var(--warning);">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    No price variants set. Add from Admin &rarr; Products.
+                </small>`;
+            selectedPrice = { id: null, weight: 1, weight_unit: 'pc', price: 0 };
         }
 
         document.getElementById('modalQty').value = 1;
         openModal('weightModal');
+
     }
 
     function selectWeight(priceId) {
