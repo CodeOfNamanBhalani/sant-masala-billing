@@ -474,9 +474,9 @@
 
         const qty = parseInt(document.getElementById('modalQty').value);
 
-        // Check if already in cart with same price
+        // Check if already in cart with same product & price (use == to handle null)
         const existingIndex = cart.findIndex(item =>
-            item.product_id === selectedProduct.id && item.price_id === selectedPrice.id
+            item.product_id === selectedProduct.id && item.price_id == selectedPrice.id
         );
 
         if (existingIndex >= 0) {
