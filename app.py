@@ -455,9 +455,16 @@ def update_product(id):
 @app.route('/api/products/<int:id>', methods=['DELETE'])
 def delete_product(id):
     product = Product.query.get_or_404(id)
-    db.session.delete(product)
-    db.session.commit()
-    return jsonify({'message': 'Product deleted'})
+    try:
+        # Nullify product_id in past order items so order history is preserved
+        OrderItem.query.filter_by(product_id=id).update({'product_id': None})
+        db.session.delete(product)
+        db.session.commit()
+        return jsonify({'message': 'Product deleted'})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
 
 
 # ----- Image Upload API -----
