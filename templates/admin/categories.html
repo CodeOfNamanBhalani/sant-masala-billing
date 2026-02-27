@@ -16,7 +16,7 @@
             <i class="bi bi-shop" style="font-size: 2rem; color: var(--accent);"></i>
             <h2>Sant Masala</h2>
         </div>
-        
+
         <nav class="sidebar-nav">
             <div class="nav-item">
                 <a href="/admin" class="nav-link">
@@ -62,7 +62,7 @@
             </div>
         </nav>
     </aside>
-    
+
     <!-- Main Content -->
     <main class="admin-main">
         <!-- Header -->
@@ -76,24 +76,24 @@
                     <span data-i18n="categories">Categories</span>
                 </h1>
             </div>
-            
+
             <div class="header-right">
                 <div class="lang-switch">
                     <button class="lang-btn active" data-lang="en">EN</button>
                     <button class="lang-btn" data-lang="gu">ગુ</button>
                 </div>
-                
+
                 <button class="theme-toggle" onclick="toggleTheme()">
                     <i class="bi bi-moon-fill"></i>
                 </button>
-                
+
                 <div class="user-menu">
                     <div class="user-avatar">A</div>
                     <span>Admin</span>
                 </div>
             </div>
         </header>
-        
+
         <!-- Content -->
         <div class="admin-content">
             <!-- Actions Bar -->
@@ -106,7 +106,7 @@
                     <span data-i18n="add_category">Add Category</span>
                 </button>
             </div>
-            
+
             <!-- Categories Table -->
             <div class="card">
                 <div class="card-body">
@@ -153,7 +153,7 @@
         <div class="modal-body">
             <form id="categoryForm">
                 <input type="hidden" id="categoryId">
-                
+
                 <div class="row g-3">
                     <div class="col-md-6">
                         <div class="form-group">
@@ -168,7 +168,7 @@
                         </div>
                     </div>
                 </div>
-                
+
                 <div class="row g-3">
                     <div class="col-md-6">
                         <div class="form-group">
@@ -183,23 +183,26 @@
                         </div>
                     </div>
                 </div>
-                
+
                 <div class="row g-3">
                     <div class="col-md-6">
                         <div class="form-group">
                             <label class="form-label" data-i18n="image">Category Image</label>
                             <div class="image-upload-container">
-                                <div class="image-preview" id="imagePreview" onclick="document.getElementById('imageFile').click()">
+                                <div class="image-preview" id="imagePreview"
+                                    onclick="document.getElementById('imageFile').click()">
                                     <img id="previewImg" src="/static/images/spice-placeholder.jpg" alt="Preview">
                                     <div class="image-overlay">
                                         <i class="bi bi-camera"></i>
                                         <span>Click to upload</span>
                                     </div>
                                 </div>
-                                <input type="file" id="imageFile" accept="image/*" style="display: none;" onchange="handleImageUpload(this)">
+                                <input type="file" id="imageFile" accept="image/*" style="display: none;"
+                                    onchange="handleImageUpload(this)">
                                 <input type="hidden" id="image">
                                 <div class="image-actions mt-2">
-                                    <button type="button" class="btn btn-sm btn-primary" onclick="document.getElementById('imageFile').click()">
+                                    <button type="button" class="btn btn-sm btn-primary"
+                                        onclick="document.getElementById('imageFile').click()">
                                         <i class="bi bi-upload"></i> Upload
                                     </button>
                                     <button type="button" class="btn btn-sm btn-secondary" onclick="toggleUrlInput()">
@@ -207,7 +210,8 @@
                                     </button>
                                 </div>
                                 <div id="urlInputContainer" style="display: none; margin-top: 10px;">
-                                    <input type="text" class="form-control" id="imageUrl" placeholder="https://..." onchange="useImageUrl(this.value)">
+                                    <input type="text" class="form-control" id="imageUrl" placeholder="https://..."
+                                        onchange="useImageUrl(this.value)">
                                 </div>
                             </div>
                         </div>
@@ -241,7 +245,7 @@
 {% block extra_js %}
 <script>
     let categories = [];
-    
+
     // Load Categories
     async function loadCategories() {
         try {
@@ -252,10 +256,10 @@
             showToast('Failed to load categories', 'error');
         }
     }
-    
+
     function renderCategories() {
         const tbody = document.getElementById('categoriesTable');
-        
+
         if (categories.length === 0) {
             tbody.innerHTML = `
                 <tr>
@@ -267,7 +271,7 @@
             `;
             return;
         }
-        
+
         tbody.innerHTML = categories.map(c => `
             <tr class="fade-in">
                 <td><strong>${c.display_order}</strong></td>
@@ -300,7 +304,7 @@
             </tr>
         `).join('');
     }
-    
+
     // Modal Functions
     function openAddModal() {
         document.getElementById('categoryId').value = '';
@@ -309,11 +313,11 @@
         document.querySelector('#modalTitle span').textContent = t('add_category');
         openModal('categoryModal');
     }
-    
+
     async function editCategory(id) {
         try {
             const category = await api.getCategory(id);
-            
+
             document.getElementById('categoryId').value = category.id;
             document.getElementById('nameEn').value = category.name_en;
             document.getElementById('nameGu').value = category.name_gu;
@@ -322,7 +326,7 @@
             document.getElementById('image').value = category.image || '';
             document.getElementById('displayOrder').value = category.display_order;
             document.getElementById('isActive').checked = category.is_active;
-            
+
             // Show image preview
             if (category.image) {
                 document.getElementById('previewImg').src = category.image;
@@ -330,14 +334,14 @@
             } else {
                 document.getElementById('previewImg').src = '/static/images/spice-placeholder.jpg';
             }
-            
+
             document.querySelector('#modalTitle span').textContent = t('edit_category');
             openModal('categoryModal');
         } catch (error) {
             showToast('Failed to load category', 'error');
         }
     }
-    
+
     async function saveCategory() {
         try {
             const data = {
@@ -349,24 +353,24 @@
                 display_order: parseInt(document.getElementById('displayOrder').value),
                 is_active: document.getElementById('isActive').checked
             };
-            
+
             const categoryId = document.getElementById('categoryId').value;
-            
+
             if (categoryId) {
                 await api.updateCategory(categoryId, data);
             } else {
                 await api.createCategory(data);
             }
-            
+
             closeModal('categoryModal');
             showToast(t('saved_success'));
             loadCategories();
-            
+
         } catch (error) {
             showToast(t('error_occurred'), 'error');
         }
     }
-    
+
     async function deleteCategory(id) {
         if (await confirmAction(t('confirm_delete'))) {
             try {
@@ -378,24 +382,24 @@
             }
         }
     }
-    
+
     // Image Upload Functions
     async function handleImageUpload(input) {
         if (input.files && input.files[0]) {
             const file = input.files[0];
             showLoading();
-            
+
             try {
                 const formData = new FormData();
                 formData.append('file', file);
-                
+
                 const response = await fetch('/api/upload', {
                     method: 'POST',
                     body: formData
                 });
-                
+
                 const result = await response.json();
-                
+
                 if (result.success) {
                     document.getElementById('image').value = result.url;
                     document.getElementById('previewImg').src = result.url;
@@ -406,23 +410,23 @@
             } catch (error) {
                 showToast('Failed to upload image', 'error');
             }
-            
+
             hideLoading();
         }
     }
-    
+
     function toggleUrlInput() {
         const container = document.getElementById('urlInputContainer');
         container.style.display = container.style.display === 'none' ? 'block' : 'none';
     }
-    
+
     function useImageUrl(url) {
         if (url) {
             document.getElementById('image').value = url;
             document.getElementById('previewImg').src = url;
         }
     }
-    
+
     function resetImagePreview() {
         document.getElementById('previewImg').src = '/static/images/spice-placeholder.jpg';
         document.getElementById('image').value = '';
@@ -430,8 +434,8 @@
         document.getElementById('imageFile').value = '';
         document.getElementById('urlInputContainer').style.display = 'none';
     }
-    
-    // Initialize
-    document.addEventListener('DOMContentLoaded', loadCategories);
+
+    // Initialize — IIFE so it runs immediately (DOMContentLoaded may have already fired)
+    loadCategories();
 </script>
 {% endblock %}

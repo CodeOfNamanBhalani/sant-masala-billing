@@ -16,7 +16,7 @@
             <i class="bi bi-shop" style="font-size: 2rem; color: var(--accent);"></i>
             <h2>Sant Masala</h2>
         </div>
-        
+
         <nav class="sidebar-nav">
             <div class="nav-item">
                 <a href="/admin" class="nav-link active">
@@ -62,7 +62,7 @@
             </div>
         </nav>
     </aside>
-    
+
     <!-- Main Content -->
     <main class="admin-main">
         <!-- Header -->
@@ -76,24 +76,24 @@
                     <span data-i18n="dashboard">Dashboard</span>
                 </h1>
             </div>
-            
+
             <div class="header-right">
                 <div class="lang-switch">
                     <button class="lang-btn active" data-lang="en">EN</button>
                     <button class="lang-btn" data-lang="gu">ગુ</button>
                 </div>
-                
+
                 <button class="theme-toggle" onclick="toggleTheme()">
                     <i class="bi bi-moon-fill"></i>
                 </button>
-                
+
                 <div class="user-menu">
                     <div class="user-avatar">A</div>
                     <span>Admin</span>
                 </div>
             </div>
         </header>
-        
+
         <!-- Content -->
         <div class="admin-content">
             <!-- Stats Cards -->
@@ -109,7 +109,7 @@
                         </div>
                     </div>
                 </div>
-                
+
                 <div class="col-md-6 col-lg-3">
                     <div class="stat-card">
                         <div class="stat-icon revenue">
@@ -121,7 +121,7 @@
                         </div>
                     </div>
                 </div>
-                
+
                 <div class="col-md-6 col-lg-3">
                     <div class="stat-card">
                         <div class="stat-icon products">
@@ -133,7 +133,7 @@
                         </div>
                     </div>
                 </div>
-                
+
                 <div class="col-md-6 col-lg-3">
                     <div class="stat-card">
                         <div class="stat-icon low-stock">
@@ -146,7 +146,7 @@
                     </div>
                 </div>
             </div>
-            
+
             <!-- Order Status Cards -->
             <div class="row g-4 mb-4">
                 <div class="col-12">
@@ -166,7 +166,7 @@
                     </div>
                 </div>
             </div>
-            
+
             <!-- Recent Orders -->
             <div class="card">
                 <div class="card-header">
@@ -214,30 +214,30 @@
     async function loadDashboard() {
         try {
             const data = await api.getDashboardStats();
-            
+
             // Update stats
             document.getElementById('totalOrders').textContent = data.total_orders;
             document.getElementById('totalRevenue').textContent = formatCurrency(data.total_revenue);
             document.getElementById('totalProducts').textContent = data.total_products;
             document.getElementById('lowStock').textContent = data.low_stock;
-            
+
             // Update status counts
             document.getElementById('pendingCount').textContent = data.status_counts.pending;
             document.getElementById('completedCount').textContent = data.status_counts.completed;
             document.getElementById('cancelledCount').textContent = data.status_counts.cancelled;
-            
+
             // Render recent orders
             renderRecentOrders(data.recent_orders);
-            
+
         } catch (error) {
             console.error('Failed to load dashboard:', error);
             showToast('Failed to load dashboard data', 'error');
         }
     }
-    
+
     function renderRecentOrders(orders) {
         const tbody = document.getElementById('recentOrdersTable');
-        
+
         if (orders.length === 0) {
             tbody.innerHTML = `
                 <tr>
@@ -249,7 +249,7 @@
             `;
             return;
         }
-        
+
         tbody.innerHTML = orders.map(order => `
             <tr class="fade-in">
                 <td><strong>${order.order_number}</strong></td>
@@ -272,7 +272,7 @@
             </tr>
         `).join('');
     }
-    
+
     function getStatusClass(status) {
         const classes = {
             'pending': 'warning',
@@ -282,12 +282,12 @@
         };
         return classes[status] || 'info';
     }
-    
+
     function viewOrder(id) {
         window.location.href = `/admin/orders?view=${id}`;
     }
-    
-    // Initialize
-    document.addEventListener('DOMContentLoaded', loadDashboard);
+
+    // Initialize — runs immediately (DOMContentLoaded may have already fired)
+    loadDashboard();
 </script>
 {% endblock %}

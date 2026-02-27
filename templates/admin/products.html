@@ -16,7 +16,7 @@
             <i class="bi bi-shop" style="font-size: 2rem; color: var(--accent);"></i>
             <h2>Sant Masala</h2>
         </div>
-        
+
         <nav class="sidebar-nav">
             <div class="nav-item">
                 <a href="/admin" class="nav-link">
@@ -62,7 +62,7 @@
             </div>
         </nav>
     </aside>
-    
+
     <!-- Main Content -->
     <main class="admin-main">
         <!-- Header -->
@@ -76,31 +76,32 @@
                     <span data-i18n="products">Products</span>
                 </h1>
             </div>
-            
+
             <div class="header-right">
                 <div class="lang-switch">
                     <button class="lang-btn active" data-lang="en">EN</button>
                     <button class="lang-btn" data-lang="gu">ગુ</button>
                 </div>
-                
+
                 <button class="theme-toggle" onclick="toggleTheme()">
                     <i class="bi bi-moon-fill"></i>
                 </button>
-                
+
                 <div class="user-menu">
                     <div class="user-avatar">A</div>
                     <span>Admin</span>
                 </div>
             </div>
         </header>
-        
+
         <!-- Content -->
         <div class="admin-content">
             <!-- Actions Bar -->
             <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
                 <div class="d-flex gap-3 flex-wrap">
                     <div class="input-group" style="max-width: 300px;">
-                        <input type="text" class="form-control" id="searchInput" placeholder="Search products..." data-i18n-placeholder="search">
+                        <input type="text" class="form-control" id="searchInput" placeholder="Search products..."
+                            data-i18n-placeholder="search">
                     </div>
                     <select class="form-control" id="categoryFilter" style="max-width: 200px;">
                         <option value="">All Categories</option>
@@ -111,7 +112,7 @@
                     <span data-i18n="add_product">Add Product</span>
                 </button>
             </div>
-            
+
             <!-- Products Table -->
             <div class="card">
                 <div class="card-body">
@@ -160,7 +161,7 @@
         <div class="modal-body">
             <form id="productForm">
                 <input type="hidden" id="productId">
-                
+
                 <div class="row g-3">
                     <div class="col-md-6">
                         <div class="form-group">
@@ -175,7 +176,7 @@
                         </div>
                     </div>
                 </div>
-                
+
                 <div class="row g-3">
                     <div class="col-md-6">
                         <div class="form-group">
@@ -203,7 +204,7 @@
                         </div>
                     </div>
                 </div>
-                
+
                 <div class="row g-3">
                     <div class="col-md-6">
                         <div class="form-group">
@@ -218,7 +219,7 @@
                         </div>
                     </div>
                 </div>
-                
+
                 <div class="row g-3">
                     <div class="col-md-6">
                         <div class="form-group">
@@ -231,10 +232,12 @@
                                         <span>Click to upload</span>
                                     </div>
                                 </div>
-                                <input type="file" id="imageFile" accept="image/*" style="display: none;" onchange="handleImageUpload(this)">
+                                <input type="file" id="imageFile" accept="image/*" style="display: none;"
+                                    onchange="handleImageUpload(this)">
                                 <input type="hidden" id="image">
                                 <div class="image-actions mt-2">
-                                    <button type="button" class="btn btn-sm btn-primary" onclick="document.getElementById('imageFile').click()">
+                                    <button type="button" class="btn btn-sm btn-primary"
+                                        onclick="document.getElementById('imageFile').click()">
                                         <i class="bi bi-upload"></i> Upload Image
                                     </button>
                                     <button type="button" class="btn btn-sm btn-secondary" onclick="toggleUrlInput()">
@@ -242,7 +245,8 @@
                                     </button>
                                 </div>
                                 <div id="urlInputContainer" style="display: none; margin-top: 10px;">
-                                    <input type="text" class="form-control" id="imageUrl" placeholder="https://..." onchange="useImageUrl(this.value)">
+                                    <input type="text" class="form-control" id="imageUrl" placeholder="https://..."
+                                        onchange="useImageUrl(this.value)">
                                 </div>
                             </div>
                         </div>
@@ -260,7 +264,7 @@
                         </div>
                     </div>
                 </div>
-                
+
                 <!-- Price Variants -->
                 <div class="form-group">
                     <label class="form-label d-flex justify-content-between">
@@ -290,7 +294,7 @@
 <script>
     let products = [];
     let categories = [];
-    
+
     // Load Data
     async function loadProducts() {
         try {
@@ -303,38 +307,38 @@
             showToast('Failed to load products', 'error');
         }
     }
-    
+
     async function loadCategories() {
         try {
             categories = await api.getCategories();
-            
+
             // Populate filter dropdown
             const filter = document.getElementById('categoryFilter');
-            filter.innerHTML = '<option value="">All Categories</option>' + 
+            filter.innerHTML = '<option value="">All Categories</option>' +
                 categories.map(c => `<option value="${c.id}">${c.name_en}</option>`).join('');
-            
+
             // Populate form dropdown
             const formSelect = document.getElementById('categoryId');
-            formSelect.innerHTML = '<option value="">Select Category</option>' + 
+            formSelect.innerHTML = '<option value="">Select Category</option>' +
                 categories.map(c => `<option value="${c.id}">${c.name_en} (${c.name_gu})</option>`).join('');
-                
+
         } catch (error) {
             console.error('Failed to load categories:', error);
         }
     }
-    
+
     function renderProducts() {
         const tbody = document.getElementById('productsTable');
         const search = document.getElementById('searchInput').value.toLowerCase();
-        
+
         let filtered = products;
         if (search) {
-            filtered = products.filter(p => 
-                p.name_en.toLowerCase().includes(search) || 
+            filtered = products.filter(p =>
+                p.name_en.toLowerCase().includes(search) ||
                 p.name_gu.includes(search)
             );
         }
-        
+
         if (filtered.length === 0) {
             tbody.innerHTML = `
                 <tr>
@@ -346,11 +350,11 @@
             `;
             return;
         }
-        
+
         tbody.innerHTML = filtered.map(p => {
             const defaultPrice = p.prices.find(pr => pr.is_default) || p.prices[0];
             const priceText = defaultPrice ? `₹${defaultPrice.price}/${defaultPrice.weight}${defaultPrice.weight_unit}` : '-';
-            
+
             return `
             <tr class="fade-in">
                 <td>${p.id}</td>
@@ -385,7 +389,7 @@
             </tr>
         `}).join('');
     }
-    
+
     // Modal Functions
     function openAddModal() {
         document.getElementById('productId').value = '';
@@ -395,11 +399,11 @@
         document.querySelector('#modalTitle span').textContent = t('add_product');
         openModal('productModal');
     }
-    
+
     async function editProduct(id) {
         try {
             const product = await api.getProduct(id);
-            
+
             document.getElementById('productId').value = product.id;
             document.getElementById('nameEn').value = product.name_en;
             document.getElementById('nameGu').value = product.name_gu;
@@ -411,7 +415,7 @@
             document.getElementById('image').value = product.image || '';
             document.getElementById('isActive').checked = product.is_active;
             document.getElementById('isFeatured').checked = product.is_featured;
-            
+
             // Show image preview
             if (product.image) {
                 document.getElementById('previewImg').src = product.image;
@@ -419,20 +423,20 @@
             } else {
                 document.getElementById('previewImg').src = '/static/images/spice-placeholder.jpg';
             }
-            
+
             // Load prices
             document.getElementById('pricesContainer').innerHTML = '';
             product.prices.forEach(price => {
                 addPriceRow(price);
             });
-            
+
             document.querySelector('#modalTitle span').textContent = t('edit_product');
             openModal('productModal');
         } catch (error) {
             showToast('Failed to load product', 'error');
         }
     }
-    
+
     let priceRowCounter = 0;
     function addPriceRow(price = null) {
         priceRowCounter++;
@@ -462,12 +466,12 @@
         `;
         container.appendChild(row);
     }
-    
+
     function removePriceRow(rowId) {
         const row = document.getElementById(rowId);
         if (row) row.remove();
     }
-    
+
     async function saveProduct() {
         try {
             // Collect prices
@@ -486,7 +490,7 @@
                     });
                 }
             });
-            
+
             const data = {
                 name_en: document.getElementById('nameEn').value,
                 name_gu: document.getElementById('nameGu').value,
@@ -500,24 +504,24 @@
                 is_featured: document.getElementById('isFeatured').checked,
                 prices: prices
             };
-            
+
             const productId = document.getElementById('productId').value;
-            
+
             if (productId) {
                 await api.updateProduct(productId, data);
             } else {
                 await api.createProduct(data);
             }
-            
+
             closeModal('productModal');
             showToast(t('saved_success'));
             loadProducts();
-            
+
         } catch (error) {
             showToast(t('error_occurred'), 'error');
         }
     }
-    
+
     async function deleteProduct(id) {
         if (await confirmAction(t('confirm_delete'))) {
             try {
@@ -529,30 +533,30 @@
             }
         }
     }
-    
+
     // Search handler
     document.getElementById('searchInput').addEventListener('input', debounce(renderProducts, 300));
     document.getElementById('categoryFilter').addEventListener('change', loadProducts);
-    
+
     // Image Upload Functions
     async function handleImageUpload(input) {
         if (input.files && input.files[0]) {
             const file = input.files[0];
-            
+
             // Show loading
             showLoading();
-            
+
             try {
                 const formData = new FormData();
                 formData.append('file', file);
-                
+
                 const response = await fetch('/api/upload', {
                     method: 'POST',
                     body: formData
                 });
-                
+
                 const result = await response.json();
-                
+
                 if (result.success) {
                     document.getElementById('image').value = result.url;
                     document.getElementById('previewImg').src = result.url;
@@ -564,23 +568,23 @@
                 console.error('Upload error:', error);
                 showToast('Failed to upload image', 'error');
             }
-            
+
             hideLoading();
         }
     }
-    
+
     function toggleUrlInput() {
         const container = document.getElementById('urlInputContainer');
         container.style.display = container.style.display === 'none' ? 'block' : 'none';
     }
-    
+
     function useImageUrl(url) {
         if (url) {
             document.getElementById('image').value = url;
             document.getElementById('previewImg').src = url;
         }
     }
-    
+
     function resetImagePreview() {
         document.getElementById('previewImg').src = '/static/images/spice-placeholder.jpg';
         document.getElementById('image').value = '';
@@ -588,23 +592,24 @@
         document.getElementById('imageFile').value = '';
         document.getElementById('urlInputContainer').style.display = 'none';
     }
-    
+
     // Update openAddModal to reset image
     const originalOpenAddModal = openAddModal;
-    openAddModal = function() {
+    openAddModal = function () {
         resetImagePreview();
         originalOpenAddModal();
     };
-    
+
     // Click on image preview to upload
-    document.getElementById('imagePreview').addEventListener('click', function() {
+    document.getElementById('imagePreview').addEventListener('click', function () {
         document.getElementById('imageFile').click();
     });
-    
-    // Initialize
-    document.addEventListener('DOMContentLoaded', async () => {
+
+    // Initialize — use IIFE since DOMContentLoaded may have already fired
+    // when this inline script runs (scripts are at end of body)
+    (async () => {
         await loadCategories();
         await loadProducts();
-    });
+    })();
 </script>
 {% endblock %}

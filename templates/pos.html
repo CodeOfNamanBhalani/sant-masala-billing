@@ -85,7 +85,7 @@
         
         <!-- Category Tabs -->
         <div class="category-tabs" id="categoryTabs">
-            <button class="category-tab active" data-id="all">All</button>
+            <button class="category-tab active" data-id="all" onclick="filterCategory('all')">All</button>
             <!-- Categories loaded dynamically -->
         </div>
         
@@ -778,11 +778,12 @@
         }
     }
     
-    // Initialize
-    document.addEventListener('DOMContentLoaded', async () => {
+    // Initialize — use IIFE since DOMContentLoaded may have already fired
+    // when this inline script runs (scripts are at end of body)
+    (async () => {
         await loadCategories();
         await loadProducts();
         checkPrintParam();
-    });
+    })();
 </script>
 {% endblock %}

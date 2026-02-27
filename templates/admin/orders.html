@@ -16,7 +16,7 @@
             <i class="bi bi-shop" style="font-size: 2rem; color: var(--accent);"></i>
             <h2>Sant Masala</h2>
         </div>
-        
+
         <nav class="sidebar-nav">
             <div class="nav-item">
                 <a href="/admin" class="nav-link">
@@ -62,7 +62,7 @@
             </div>
         </nav>
     </aside>
-    
+
     <!-- Main Content -->
     <main class="admin-main">
         <!-- Header -->
@@ -76,24 +76,24 @@
                     <span data-i18n="orders">Manage Orders</span>
                 </h1>
             </div>
-            
+
             <div class="header-right">
                 <div class="lang-switch">
                     <button class="lang-btn active" data-lang="en">EN</button>
                     <button class="lang-btn" data-lang="gu">ગુ</button>
                 </div>
-                
+
                 <button class="theme-toggle" onclick="toggleTheme()">
                     <i class="bi bi-moon-fill"></i>
                 </button>
-                
+
                 <div class="user-menu">
                     <div class="user-avatar">A</div>
                     <span>Admin</span>
                 </div>
             </div>
         </header>
-        
+
         <!-- Content -->
         <div class="admin-content">
             <!-- Status Cards -->
@@ -117,7 +117,7 @@
                     </div>
                 </div>
             </div>
-            
+
             <!-- Filters -->
             <div class="card mb-4">
                 <div class="card-body">
@@ -148,7 +148,7 @@
                     </div>
                 </div>
             </div>
-            
+
             <!-- Orders List -->
             <div class="card">
                 <div class="card-header">
@@ -203,7 +203,7 @@
 <script>
     let orders = [];
     let currentOrder = null;
-    
+
     // Load Orders
     async function loadOrders() {
         try {
@@ -212,12 +212,12 @@
                 from: document.getElementById('fromDate').value,
                 to: document.getElementById('toDate').value
             };
-            
+
             // Remove empty params
             Object.keys(params).forEach(key => {
                 if (!params[key]) delete params[key];
             });
-            
+
             orders = await api.getOrders(params);
             renderOrders();
             updateCounts();
@@ -226,25 +226,25 @@
             showToast('Failed to load orders', 'error');
         }
     }
-    
+
     function updateCounts() {
         const pending = orders.filter(o => o.status === 'pending').length;
         const completed = orders.filter(o => o.status === 'completed').length;
         const cancelled = orders.filter(o => o.status === 'cancelled').length;
-        
+
         document.getElementById('pendingCount').textContent = pending;
         document.getElementById('completedCount').textContent = completed;
         document.getElementById('cancelledCount').textContent = cancelled;
     }
-    
+
     function filterStatus(status) {
         document.getElementById('statusFilter').value = status;
         loadOrders();
     }
-    
+
     function renderOrders() {
         const container = document.getElementById('ordersContainer');
-        
+
         if (orders.length === 0) {
             container.innerHTML = `
                 <div style="text-align: center; padding: 40px; color: var(--text-muted);">
@@ -254,7 +254,7 @@
             `;
             return;
         }
-        
+
         container.innerHTML = orders.map(order => `
             <div class="order-card card mb-3 fade-in">
                 <div class="card-body">
@@ -311,7 +311,7 @@
             </div>
         `).join('');
     }
-    
+
     function getStatusClass(status) {
         const classes = {
             'pending': 'badge-warning',
@@ -320,11 +320,11 @@
         };
         return classes[status] || 'badge-info';
     }
-    
+
     async function viewOrder(id) {
         try {
             currentOrder = await api.getOrder(id);
-            
+
             const itemsHtml = currentOrder.items.map(item => `
                 <tr>
                     <td>
@@ -337,7 +337,7 @@
                     <td><strong>${formatCurrency(item.total)}</strong></td>
                 </tr>
             `).join('');
-            
+
             document.getElementById('orderDetails').innerHTML = `
                 <div class="mb-4">
                     <div class="row">
@@ -405,13 +405,13 @@
                 </div>
                 ` : ''}
             `;
-            
+
             openModal('orderModal');
         } catch (error) {
             showToast('Failed to load order', 'error');
         }
     }
-    
+
     async function updateOrderStatus(id, status) {
         try {
             await api.updateOrder(id, { status });
@@ -421,22 +421,22 @@
             showToast('Failed to update order', 'error');
         }
     }
-    
+
     async function printReceipt(orderId) {
         // Will be implemented with thermal printer
         window.open(`/pos?print=${orderId}`, '_blank');
     }
-    
+
     function printOrderReceipt() {
         if (currentOrder) {
             printReceipt(currentOrder.id);
         }
     }
-    
+
     // Event listeners
     document.getElementById('statusFilter').addEventListener('change', loadOrders);
-    
-    // Initialize
-    document.addEventListener('DOMContentLoaded', loadOrders);
+
+    // Initialize — runs immediately (DOMContentLoaded may have already fired)
+    loadOrders();
 </script>
 {% endblock %}

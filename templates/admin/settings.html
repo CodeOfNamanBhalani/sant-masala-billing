@@ -16,7 +16,7 @@
             <i class="bi bi-shop" style="font-size: 2rem; color: var(--accent);"></i>
             <h2>Sant Masala</h2>
         </div>
-        
+
         <nav class="sidebar-nav">
             <div class="nav-item">
                 <a href="/admin" class="nav-link">
@@ -62,7 +62,7 @@
             </div>
         </nav>
     </aside>
-    
+
     <!-- Main Content -->
     <main class="admin-main">
         <!-- Header -->
@@ -76,24 +76,24 @@
                     <span data-i18n="settings">Settings</span>
                 </h1>
             </div>
-            
+
             <div class="header-right">
                 <div class="lang-switch">
                     <button class="lang-btn active" data-lang="en">EN</button>
                     <button class="lang-btn" data-lang="gu">ગુ</button>
                 </div>
-                
+
                 <button class="theme-toggle" onclick="toggleTheme()">
                     <i class="bi bi-moon-fill"></i>
                 </button>
-                
+
                 <div class="user-menu">
                     <div class="user-avatar">A</div>
                     <span>Admin</span>
                 </div>
             </div>
         </header>
-        
+
         <!-- Content -->
         <div class="admin-content">
             <div class="row g-4">
@@ -113,11 +113,13 @@
                             </div>
                             <div class="form-group">
                                 <label class="form-label">Shop Name (Gujarati)</label>
-                                <input type="text" class="form-control gujarati" id="shopNameGu" placeholder="સંત મસાલા">
+                                <input type="text" class="form-control gujarati" id="shopNameGu"
+                                    placeholder="સંત મસાલા">
                             </div>
                             <div class="form-group">
                                 <label class="form-label" data-i18n="shop_address">Shop Address</label>
-                                <textarea class="form-control" id="shopAddress" rows="2" placeholder="Main Market, Bhavnagar - 364001"></textarea>
+                                <textarea class="form-control" id="shopAddress" rows="2"
+                                    placeholder="Main Market, Bhavnagar - 364001"></textarea>
                             </div>
                             <div class="form-group">
                                 <label class="form-label" data-i18n="shop_phone">Shop Phone</label>
@@ -130,7 +132,7 @@
                         </div>
                     </div>
                 </div>
-                
+
                 <!-- Billing Settings -->
                 <div class="col-lg-6">
                     <div class="card">
@@ -147,7 +149,8 @@
                             </div>
                             <div class="form-group">
                                 <label class="form-label" data-i18n="tax_rate">Tax Rate (%)</label>
-                                <input type="number" class="form-control" id="taxRate" value="0" min="0" max="100" style="width: 100px;">
+                                <input type="number" class="form-control" id="taxRate" value="0" min="0" max="100"
+                                    style="width: 100px;">
                             </div>
                             <div class="form-group">
                                 <label class="form-label">Default Language</label>
@@ -159,7 +162,7 @@
                         </div>
                     </div>
                 </div>
-                
+
                 <!-- Printer Settings -->
                 <div class="col-lg-6">
                     <div class="card">
@@ -197,7 +200,7 @@
                         </div>
                     </div>
                 </div>
-                
+
                 <!-- App Info -->
                 <div class="col-lg-6">
                     <div class="card">
@@ -215,11 +218,12 @@
                                 <strong>Developer:</strong> Sant Masala Billing System
                             </div>
                             <div class="mb-3">
-                                <strong>PWA Status:</strong> 
+                                <strong>PWA Status:</strong>
                                 <span id="pwaStatus" class="badge badge-info">Checking...</span>
                             </div>
                             <div class="mb-3">
-                                <button class="btn btn-primary" onclick="installPWA()" id="installBtn" style="display: none;">
+                                <button class="btn btn-primary" onclick="installPWA()" id="installBtn"
+                                    style="display: none;">
                                     <i class="bi bi-download"></i>
                                     Install App
                                 </button>
@@ -238,7 +242,7 @@
                     </div>
                 </div>
             </div>
-            
+
             <!-- Save Button -->
             <div class="mt-4">
                 <button class="btn btn-primary btn-lg" onclick="saveSettings()">
@@ -256,12 +260,12 @@
 <script>
     let settings = {};
     let deferredPrompt = null;
-    
+
     // Load Settings
     async function loadSettings() {
         try {
             settings = await api.getSettings();
-            
+
             // Populate form
             document.getElementById('shopName').value = settings.shop_name || '';
             document.getElementById('shopNameGu').value = settings.shop_name_gu || '';
@@ -273,15 +277,15 @@
             document.getElementById('defaultLang').value = settings.language || 'en';
             document.getElementById('printerType').value = settings.printer_type || 'browser';
             document.getElementById('printerWidth').value = settings.printer_width || '58';
-            
+
             // Also update localStorage for printer
             localStorage.setItem('printerType', settings.printer_type || 'browser');
-            
+
         } catch (error) {
             console.error('Failed to load settings:', error);
         }
     }
-    
+
     async function saveSettings() {
         const data = {
             shop_name: document.getElementById('shopName').value,
@@ -295,7 +299,7 @@
             printer_type: document.getElementById('printerType').value,
             printer_width: document.getElementById('printerWidth').value
         };
-        
+
         try {
             await api.saveSettings(data);
             localStorage.setItem('printerType', data.printer_type);
@@ -304,13 +308,13 @@
             showToast(t('error_occurred'), 'error');
         }
     }
-    
+
     function testPrinter() {
         const printerType = document.getElementById('printerType').value;
         localStorage.setItem('printerType', printerType);
         ThermalPrinter.testPrint();
     }
-    
+
     function clearAllData() {
         if (confirm('⚠️ WARNING: This will delete ALL data including products, orders, and customers. This cannot be undone!\n\nAre you absolutely sure?')) {
             if (confirm('Please confirm again. Delete ALL data?')) {
@@ -319,7 +323,7 @@
             }
         }
     }
-    
+
     // PWA Install
     window.addEventListener('beforeinstallprompt', (e) => {
         e.preventDefault();
@@ -328,7 +332,7 @@
         document.getElementById('pwaStatus').textContent = 'Ready to install';
         document.getElementById('pwaStatus').className = 'badge badge-success';
     });
-    
+
     async function installPWA() {
         if (deferredPrompt) {
             deferredPrompt.prompt();
@@ -340,7 +344,7 @@
             deferredPrompt = null;
         }
     }
-    
+
     // Check PWA status
     function checkPWAStatus() {
         if (window.matchMedia('(display-mode: standalone)').matches) {
@@ -354,11 +358,9 @@
             document.getElementById('pwaStatus').className = 'badge badge-warning';
         }
     }
-    
-    // Initialize
-    document.addEventListener('DOMContentLoaded', () => {
-        loadSettings();
-        checkPWAStatus();
-    });
+
+    // Initialize — runs immediately (DOMContentLoaded may have already fired)
+    loadSettings();
+    checkPWAStatus();
 </script>
 {% endblock %}

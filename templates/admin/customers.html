@@ -16,7 +16,7 @@
             <i class="bi bi-shop" style="font-size: 2rem; color: var(--accent);"></i>
             <h2>Sant Masala</h2>
         </div>
-        
+
         <nav class="sidebar-nav">
             <div class="nav-item">
                 <a href="/admin" class="nav-link">
@@ -62,7 +62,7 @@
             </div>
         </nav>
     </aside>
-    
+
     <!-- Main Content -->
     <main class="admin-main">
         <!-- Header -->
@@ -76,37 +76,38 @@
                     <span data-i18n="customers">Customers</span>
                 </h1>
             </div>
-            
+
             <div class="header-right">
                 <div class="lang-switch">
                     <button class="lang-btn active" data-lang="en">EN</button>
                     <button class="lang-btn" data-lang="gu">ગુ</button>
                 </div>
-                
+
                 <button class="theme-toggle" onclick="toggleTheme()">
                     <i class="bi bi-moon-fill"></i>
                 </button>
-                
+
                 <div class="user-menu">
                     <div class="user-avatar">A</div>
                     <span>Admin</span>
                 </div>
             </div>
         </header>
-        
+
         <!-- Content -->
         <div class="admin-content">
             <!-- Actions Bar -->
             <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
                 <div class="input-group" style="max-width: 300px;">
-                    <input type="text" class="form-control" id="searchInput" placeholder="Search customers..." data-i18n-placeholder="search">
+                    <input type="text" class="form-control" id="searchInput" placeholder="Search customers..."
+                        data-i18n-placeholder="search">
                 </div>
                 <button class="btn btn-primary" onclick="openAddModal()">
                     <i class="bi bi-plus-lg"></i>
                     Add Customer
                 </button>
             </div>
-            
+
             <!-- Customers Table -->
             <div class="card">
                 <div class="card-body">
@@ -153,7 +154,7 @@
         <div class="modal-body">
             <form id="customerForm">
                 <input type="hidden" id="customerId">
-                
+
                 <div class="form-group">
                     <label class="form-label">Name *</label>
                     <input type="text" class="form-control" id="name" required>
@@ -186,7 +187,7 @@
 {% block extra_js %}
 <script>
     let customers = [];
-    
+
     // Load Customers
     async function loadCustomers(search = '') {
         try {
@@ -197,10 +198,10 @@
             showToast('Failed to load customers', 'error');
         }
     }
-    
+
     function renderCustomers() {
         const tbody = document.getElementById('customersTable');
-        
+
         if (customers.length === 0) {
             tbody.innerHTML = `
                 <tr>
@@ -212,7 +213,7 @@
             `;
             return;
         }
-        
+
         tbody.innerHTML = customers.map(c => `
             <tr class="fade-in">
                 <td>${c.id}</td>
@@ -234,7 +235,7 @@
             </tr>
         `).join('');
     }
-    
+
     // Modal Functions
     function openAddModal() {
         document.getElementById('customerId').value = '';
@@ -242,24 +243,24 @@
         document.querySelector('#modalTitle span').textContent = 'Add Customer';
         openModal('customerModal');
     }
-    
+
     async function editCustomer(id) {
         try {
             const customer = await api.getCustomer(id);
-            
+
             document.getElementById('customerId').value = customer.id;
             document.getElementById('name').value = customer.name;
             document.getElementById('phone').value = customer.phone || '';
             document.getElementById('email').value = customer.email || '';
             document.getElementById('address').value = customer.address || '';
-            
+
             document.querySelector('#modalTitle span').textContent = 'Edit Customer';
             openModal('customerModal');
         } catch (error) {
             showToast('Failed to load customer', 'error');
         }
     }
-    
+
     async function saveCustomer() {
         try {
             const data = {
@@ -268,24 +269,24 @@
                 email: document.getElementById('email').value,
                 address: document.getElementById('address').value
             };
-            
+
             const customerId = document.getElementById('customerId').value;
-            
+
             if (customerId) {
                 await api.updateCustomer(customerId, data);
             } else {
                 await api.createCustomer(data);
             }
-            
+
             closeModal('customerModal');
             showToast(t('saved_success'));
             loadCustomers();
-            
+
         } catch (error) {
             showToast(t('error_occurred'), 'error');
         }
     }
-    
+
     async function deleteCustomer(id) {
         if (await confirmAction(t('confirm_delete'))) {
             try {
@@ -297,13 +298,13 @@
             }
         }
     }
-    
+
     // Search handler
     document.getElementById('searchInput').addEventListener('input', debounce((e) => {
         loadCustomers(e.target.value);
     }, 300));
-    
-    // Initialize
-    document.addEventListener('DOMContentLoaded', loadCustomers);
+
+    // Initialize — runs immediately (DOMContentLoaded may have already fired)
+    loadCustomers();
 </script>
 {% endblock %}
