@@ -380,6 +380,13 @@ const ThermalPrinter = {
                         size: 58mm auto;
                         margin: 2mm;
                     }
+                    @media print {
+                        body {
+                            width: 58mm;
+                            margin: 0 auto;
+                            text-align: center;
+                        }
+                    }
                     * {
                         margin: 0;
                         padding: 0;
@@ -387,110 +394,124 @@ const ThermalPrinter = {
                     }
                     body {
                         font-family: 'Courier New', monospace;
-                        font-size: 11px;
-                        font-weight: 500;
+                        font-size: 18px;
+                        font-weight: 600;
                         color: #000000;
                         width: 54mm;
+                        max-width: 58mm;
+                        margin: auto;
                         padding: 2mm;
+                        text-align: left;
+                    }
+                    .header {
+                        text-align: center;
+                        font-size: 22px;
+                        font-weight: bold;
+                        margin-bottom: 2mm;
+                        line-height: 1.4;
+                    }
+                    .header .shop-sub {
+                        font-size: 15px;
+                        font-weight: 600;
                     }
                     .center { text-align: center; }
                     .bold { font-weight: bold; }
-                    .large { font-size: 15px; }
-                    .divider { border-top: 1px dashed #000; margin: 3mm 0; }
-                    .double { border-top: 1px solid #000; border-bottom: 1px solid #000; padding: 1mm 0; margin: 3mm 0; }
-                    table { width: 100%; border-collapse: collapse; }
-                    td { padding: 1mm 0; vertical-align: top; }
-                    .right { text-align: right; }
-                    .total-row { font-size: 13px; font-weight: bold; }
+                    .divider { border-top: 1px dashed #000; margin: 2mm 0; }
+                    .double { border-top: 1px solid #000; border-bottom: 1px solid #000; padding: 1mm 0; margin: 2mm 0; }
+                    table { width: 100%; border-collapse: collapse; font-size: 18px; }
+                    th { text-align: center; font-weight: bold; padding: 1mm 0; }
+                    td { padding: 1mm 0; vertical-align: top; text-align: center; }
+                    td:first-child { text-align: left; }
+                    td:last-child { text-align: right; }
+                    .total-row td { font-size: 22px; font-weight: 700; }
                     .gujarati { font-family: 'Noto Sans Gujarati', sans-serif; }
+                    .footer { text-align: center; font-size: 14px; margin-top: 3mm; }
+                    .footer .terms { font-size: 11px; margin-top: 2mm; }
                 </style>
             </head>
             <body>
-                <div class="center">
-                    <div class="bold large">${shop.name}</div>
-                    <div class="gujarati">${shop.name_gu}</div>
-                    ${shop.address ? `<div>${shop.address}</div>` : ''}
-                    ${shop.phone ? `<div>Ph: ${shop.phone}</div>` : ''}
-                    ${shop.gst ? `<div>GST: ${shop.gst}</div>` : ''}
+                <div class="header">
+                    ${shop.name}<br>
+                    <span class="gujarati">${shop.name_gu}</span><br>
+                    ${shop.address ? `<span class="shop-sub">${shop.address}</span><br>` : ''}
+                    ${shop.phone ? `<span class="shop-sub">Ph: ${shop.phone}</span><br>` : ''}
+                    ${shop.gst ? `<span class="shop-sub">GST: ${shop.gst}</span>` : ''}
                 </div>
-                
+
                 <div class="divider"></div>
-                
+
                 <div class="bold">BILL / બિલ</div>
                 <div>Bill No: ${order.order_number}</div>
                 <div>Date: ${order.created_at}</div>
                 ${order.customer_name ? `<div>Customer: ${order.customer_name}</div>` : ''}
                 ${order.customer_phone ? `<div>Phone: ${order.customer_phone}</div>` : ''}
-                
+
                 <div class="double"></div>
-                
+
                 <table>
-                    <tr class="bold">
-                        <td>Item</td>
-                        <td class="right">Qty</td>
-                        <td class="right">Amt</td>
+                    <tr>
+                        <th style="text-align:left;">Item</th>
+                        <th>Qty</th>
+                        <th style="text-align:right;">Amt</th>
                     </tr>
                 </table>
-                
+
                 <div class="divider"></div>
-                
+
                 <table>
                     ${order.items.map(item => `
                         <tr>
-                            <td colspan="3">
+                            <td colspan="3" style="text-align:left;">
                                 ${item.product_name}
                                 ${item.product_name_gu ? `<br><span class="gujarati">${item.product_name_gu}</span>` : ''}
                             </td>
                         </tr>
                         <tr>
-                            <td>&nbsp;&nbsp;${item.weight}${item.weight_unit} @${item.price}</td>
-                            <td class="right">${item.quantity}</td>
-                            <td class="right">${item.total.toFixed(2)}</td>
+                            <td style="text-align:left;">&nbsp;&nbsp;${item.weight}${item.weight_unit} @${item.price}</td>
+                            <td>${item.quantity}</td>
+                            <td>${item.total.toFixed(2)}</td>
                         </tr>
                     `).join('')}
                 </table>
-                
+
                 <div class="double"></div>
-                
+
                 <table>
                     <tr>
-                        <td>Subtotal:</td>
-                        <td class="right">${order.subtotal.toFixed(2)}</td>
+                        <td style="text-align:left;">Subtotal:</td>
+                        <td>${order.subtotal.toFixed(2)}</td>
                     </tr>
                     ${order.discount > 0 ? `
                     <tr>
-                        <td>Discount:</td>
-                        <td class="right">-${order.discount.toFixed(2)}</td>
+                        <td style="text-align:left;">Discount:</td>
+                        <td>-${order.discount.toFixed(2)}</td>
                     </tr>
                     ` : ''}
                     ${order.tax > 0 ? `
                     <tr>
-                        <td>Tax:</td>
-                        <td class="right">${order.tax.toFixed(2)}</td>
+                        <td style="text-align:left;">Tax:</td>
+                        <td>${order.tax.toFixed(2)}</td>
                     </tr>
                     ` : ''}
                 </table>
-                
+
                 <div class="divider"></div>
-                
+
                 <table>
                     <tr class="total-row">
-                        <td>TOTAL:</td>
-                        <td class="right">₹${order.total.toFixed(2)}</td>
+                        <td style="text-align:left;">TOTAL:</td>
+                        <td>&#x20B9;${order.total.toFixed(2)}</td>
                     </tr>
                 </table>
-                
+
                 <div class="divider"></div>
-                
+
                 <div>Payment: ${order.payment_method.toUpperCase()}</div>
-                
-                <br>
-                
-                <div class="center">
+
+                <div class="footer">
                     <div>Thank You! Visit Again!</div>
                     <div class="gujarati">આભાર! ફરી પધારો!</div>
-                    <br>
-                    <div style="font-size: 9px;">Terms & Conditions Apply</div>
+                    <div class="terms">Terms &amp; Conditions Apply</div>
                 </div>
             </body>
             </html>
