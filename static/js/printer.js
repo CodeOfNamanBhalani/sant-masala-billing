@@ -387,19 +387,21 @@ const ThermalPrinter = {
                     }
                     body {
                         font-family: 'Courier New', monospace;
-                        font-size: 10px;
+                        font-size: 11px;
+                        font-weight: 500;
+                        color: #000000;
                         width: 54mm;
                         padding: 2mm;
                     }
                     .center { text-align: center; }
                     .bold { font-weight: bold; }
-                    .large { font-size: 14px; }
+                    .large { font-size: 15px; }
                     .divider { border-top: 1px dashed #000; margin: 3mm 0; }
                     .double { border-top: 1px solid #000; border-bottom: 1px solid #000; padding: 1mm 0; margin: 3mm 0; }
                     table { width: 100%; border-collapse: collapse; }
                     td { padding: 1mm 0; vertical-align: top; }
                     .right { text-align: right; }
-                    .total-row { font-size: 12px; font-weight: bold; }
+                    .total-row { font-size: 13px; font-weight: bold; }
                     .gujarati { font-family: 'Noto Sans Gujarati', sans-serif; }
                 </style>
             </head>
@@ -488,7 +490,7 @@ const ThermalPrinter = {
                     <div>Thank You! Visit Again!</div>
                     <div class="gujarati">આભાર! ફરી પધારો!</div>
                     <br>
-                    <div style="font-size: 8px;">Terms & Conditions Apply</div>
+                    <div style="font-size: 9px;">Terms & Conditions Apply</div>
                 </div>
             </body>
             </html>
