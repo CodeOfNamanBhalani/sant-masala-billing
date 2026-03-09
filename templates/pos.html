@@ -294,6 +294,10 @@
                 <i class="bi bi-printer"></i>
                 Print Receipt
             </button>
+            <button class="btn btn-primary btn-lg" id="bluetooth-print" style="margin-left:8px;" onclick="bluetoothPrintReceipt()">
+                <i class="bi bi-bluetooth"></i>
+                Print via Bluetooth
+            </button>
             <button class="btn btn-secondary" onclick="newOrder()">
                 New Order
             </button>
@@ -829,15 +833,34 @@
         showToast('Order retrieved');
     }
 
+
     async function printReceipt() {
         if (!lastOrder) return;
-
         try {
             const receiptData = await api.getReceiptData(lastOrder.id);
-            ThermalPrinter.printReceipt(receiptData);
+            // Default: use preferred printer type
+            await ThermalPrinter.printReceipt(receiptData);
         } catch (error) {
             console.error('Print error:', error);
-            // Fallback to browser print
+            window.print();
+        }
+    }
+
+    async function bluetoothPrintReceipt() {
+        if (!lastOrder) return;
+        if (!navigator.bluetooth) {
+            showToast('Web Bluetooth not supported', 'error');
+            window.print();
+            return;
+        }
+        try {
+            // Set preference
+            localStorage.setItem('printerType', 'bluetooth');
+            await ThermalPrinter.connectBluetoothPrinter(true);
+            const receiptData = await api.getReceiptData(lastOrder.id);
+            await ThermalPrinter.printReceiptESCPOSEncode(receiptData);
+        } catch (error) {
+            showToast('Bluetooth print failed', 'error');
             window.print();
         }
     }
@@ -889,8 +912,14 @@
         const printId = params.get('print');
         if (printId) {
             // Auto-print receipt
-            api.getReceiptData(printId).then(data => {
-                ThermalPrinter.printReceipt(data);
+            api.getReceiptData(printId).then(async data => {
+                // If Bluetooth preferred and supported, auto-print via Bluetooth
+                if (localStorage.getItem('printerType') === 'bluetooth' && navigator.bluetooth) {
+                    await ThermalPrinter.autoReconnectPrinter();
+                    await ThermalPrinter.printReceiptESCPOSEncode(data);
+                } else {
+                    await ThermalPrinter.printReceipt(data);
+                }
             });
         }
     }

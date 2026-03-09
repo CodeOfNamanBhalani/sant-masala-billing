@@ -12,6 +12,18 @@ const ThermalPrinter = {
         printerType: 'usb' // usb, bluetooth, network
     },
 
+    // Bluetooth printer state
+    bluetooth: {
+        device: null,
+        server: null,
+        service: null,
+        characteristic: null,
+        connected: false,
+        reconnecting: false,
+        serviceUUID: '000018f0-0000-1000-8000-00805f9b34fb',
+        charUUID: '00002af1-0000-1000-8000-00805f9b34fb',
+    },
+
     // ESC/POS Commands
     ESC: '\x1B',
     GS: '\x1D',
@@ -237,44 +249,116 @@ const ThermalPrinter = {
         if (!navigator.bluetooth) {
             throw new Error('Web Bluetooth not supported in this browser');
         }
-        
         try {
-            // Request Bluetooth device
-            const device = await navigator.bluetooth.requestDevice({
-                filters: [
-                    { services: ['000018f0-0000-1000-8000-00805f9b34fb'] }, // Common printer service
-                ],
-                optionalServices: ['000018f0-0000-1000-8000-00805f9b34fb']
-            });
-            
-            const server = await device.gatt.connect();
-            
-            // Get the printer service
-            const service = await server.getPrimaryService('000018f0-0000-1000-8000-00805f9b34fb');
-            
-            // Get the characteristic for printing
-            const characteristic = await service.getCharacteristic('00002af1-0000-1000-8000-00805f9b34fb');
-            
+            // Use existing connection if available
+            if (!this.bluetooth.connected || !this.bluetooth.characteristic) {
+                await this.connectBluetoothPrinter();
+            }
+            if (!this.bluetooth.connected || !this.bluetooth.characteristic) {
+                throw new Error('Bluetooth printer not connected');
+            }
             // Convert text to bytes
             const encoder = new TextEncoder();
             const data = encoder.encode(receiptText);
-            
             // Split into chunks (Bluetooth has MTU limits)
             const chunkSize = 20;
             for (let i = 0; i < data.length; i += chunkSize) {
                 const chunk = data.slice(i, i + chunkSize);
-                await characteristic.writeValue(chunk);
-                await new Promise(resolve => setTimeout(resolve, 50)); // Small delay
+                await this.bluetooth.characteristic.writeValue(chunk);
+                await new Promise(resolve => setTimeout(resolve, 50));
             }
-            
-            await device.gatt.disconnect();
-            
             console.log('Print sent to Bluetooth printer');
             return true;
-            
         } catch (error) {
+            this.bluetooth.connected = false;
+            this.bluetooth.characteristic = null;
             console.error('Bluetooth print error:', error);
             throw error;
+        }
+    },
+
+    /**
+     * Connect to Bluetooth printer (with device selection or auto-reconnect)
+     */
+    async connectBluetoothPrinter(forceSelect = false) {
+        if (!navigator.bluetooth) {
+            showToast('Web Bluetooth not supported', 'error');
+            return null;
+        }
+        try {
+            let device = null;
+            // Try auto-reconnect from localStorage
+            if (!forceSelect) {
+                const saved = localStorage.getItem('bluetoothPrinter');
+                if (saved) {
+                    device = await navigator.bluetooth.requestDevice({
+                        filters: [{ services: [this.bluetooth.serviceUUID] }],
+                        optionalServices: [this.bluetooth.serviceUUID],
+                        acceptAllDevices: false
+                    });
+                }
+            }
+            // If not found or forceSelect, prompt user
+            if (!device) {
+                device = await navigator.bluetooth.requestDevice({
+                    filters: [{ services: [this.bluetooth.serviceUUID] }],
+                    optionalServices: [this.bluetooth.serviceUUID]
+                });
+                // Save device id for future auto-reconnect
+                localStorage.setItem('bluetoothPrinter', device.id);
+            }
+            this.bluetooth.device = device;
+            this.bluetooth.server = await device.gatt.connect();
+            this.bluetooth.service = await this.bluetooth.server.getPrimaryService(this.bluetooth.serviceUUID);
+            this.bluetooth.characteristic = await this.bluetooth.service.getCharacteristic(this.bluetooth.charUUID);
+            this.bluetooth.connected = true;
+            // Listen for disconnect
+            device.addEventListener('gattserverdisconnected', () => {
+                this.bluetooth.connected = false;
+                this.bluetooth.characteristic = null;
+                this.autoReconnectPrinter();
+            });
+            showToast('Bluetooth printer connected');
+            return device;
+        } catch (err) {
+            showToast('Bluetooth printer connection failed', 'error');
+            this.bluetooth.connected = false;
+            this.bluetooth.characteristic = null;
+            return null;
+        }
+    },
+
+    /**
+     * Auto-reconnect to last Bluetooth printer
+     */
+    async autoReconnectPrinter() {
+        if (this.bluetooth.reconnecting) return;
+        this.bluetooth.reconnecting = true;
+        const saved = localStorage.getItem('bluetoothPrinter');
+        if (!saved) {
+            this.bluetooth.reconnecting = false;
+            return;
+        }
+        try {
+            await this.connectBluetoothPrinter(false);
+        } catch (e) {
+            // Ignore
+        }
+        this.bluetooth.reconnecting = false;
+    },
+
+    /**
+     * Print receipt using ESC/POS encoding (Bluetooth only)
+     */
+    async printReceiptESCPOSEncode(receiptData) {
+        const receiptText = this.generateReceipt(receiptData);
+        try {
+            await this.printBluetooth(receiptText);
+            showToast('Receipt printed (Bluetooth)');
+        } catch (err) {
+            showToast('Bluetooth print failed', 'error');
+            // Fallback
+            this.printBrowser(receiptData);
         }
     },
 
@@ -426,34 +510,26 @@ const ThermalPrinter = {
      * Main print function - tries different methods
      */
     async printReceipt(receiptData) {
-        const receiptText = this.generateReceipt(receiptData);
-        
-        // Check stored printer preference
+        // If Web Bluetooth supported and user prefers Bluetooth, use it
         const printerType = localStorage.getItem('printerType') || 'browser';
-        
-        try {
-            switch (printerType) {
-                case 'usb':
-                    await this.printUSB(receiptText);
-                    showToast('Receipt printed (USB)');
-                    break;
-                    
-                case 'bluetooth':
-                    await this.printBluetooth(receiptText);
-                    showToast('Receipt printed (Bluetooth)');
-                    break;
-                    
-                default:
-                    this.printBrowser(receiptData);
-            }
-        } catch (error) {
-            console.error('Print failed:', error);
-            
-            // Fallback to browser print
-            if (confirm('Direct printing failed. Use browser print instead?')) {
+        if (printerType === 'bluetooth' && navigator.bluetooth) {
+            await this.printReceiptESCPOSEncode(receiptData);
+            return;
+        }
+        // USB printing (desktop)
+        if (printerType === 'usb' && navigator.usb) {
+            const receiptText = this.generateReceipt(receiptData);
+            try {
+                await this.printUSB(receiptText);
+                showToast('Receipt printed (USB)');
+            } catch (err) {
+                showToast('USB print failed', 'error');
                 this.printBrowser(receiptData);
             }
+            return;
         }
+        // Fallback: browser print
+        this.printBrowser(receiptData);
     },
 
     /**
@@ -492,6 +568,19 @@ const ThermalPrinter = {
         
         await this.printReceipt(testData);
     }
+};
+
+    /**
+     * Manual disconnect for Bluetooth printer
+     */
+    async disconnectBluetoothPrinter() {
+        if (this.bluetooth.device && this.bluetooth.device.gatt.connected) {
+            await this.bluetooth.device.gatt.disconnect();
+            this.bluetooth.connected = false;
+            this.bluetooth.characteristic = null;
+            showToast('Bluetooth printer disconnected');
+        }
+    },
 };
 
 // Export for use
