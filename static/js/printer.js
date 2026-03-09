@@ -509,6 +509,52 @@ const ThermalPrinter = {
     },
 
     /**
+     * Print via WiFi/Network ESC/POS (TCP port 9100)
+     * Sends ESC/POS bytes to Flask backend which forwards to printer over TCP
+     */
+    async printNetwork(receiptData) {
+        const receiptText = this.generateReceipt(receiptData);
+
+        // Encode ESC/POS string to bytes then to base64
+        const encoder = new TextEncoder();
+        const bytes = encoder.encode(receiptText);
+        const b64 = btoa(String.fromCharCode(...bytes));
+
+        // Get IP and port from localStorage (saved from settings)
+        const ip = localStorage.getItem('printerIp') || '';
+        const port = parseInt(localStorage.getItem('printerPort') || '9100');
+
+        if (!ip) {
+            showToast('WiFi Printer IP not set. Go to Settings → Printer.', 'warning');
+            throw new Error('No printer IP configured');
+        }
+
+        const response = await fetch('/api/print/network', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ data_b64: b64, ip, port })
+        });
+
+        const result = await response.json();
+        if (!result.success) {
+            throw new Error(result.error || 'Network print failed');
+        }
+        return result;
+    },
+
+    /**
+     * Test if WiFi printer is reachable
+     */
+    async testNetworkConnection(ip, port) {
+        const response = await fetch('/api/print/test-network', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ip: ip || localStorage.getItem('printerIp'), port: port || parseInt(localStorage.getItem('printerPort') || '9100') })
+        });
+        return await response.json();
+    },
+
+    /**
      * Main print function - tries different methods
      */
     async printReceipt(receiptData) {
@@ -526,6 +572,17 @@ const ThermalPrinter = {
                 showToast('Receipt printed (USB)');
             } catch (err) {
                 showToast('USB print failed', 'error');
+                this.printBrowser(receiptData);
+            }
+            return;
+        }
+        // WiFi / Network printing (ESC/POS over TCP port 9100)
+        if (printerType === 'network') {
+            try {
+                await this.printNetwork(receiptData);
+                showToast('✅ Receipt printed (WiFi Printer)');
+            } catch (err) {
+                showToast('WiFi print failed: ' + err.message, 'error');
                 this.printBrowser(receiptData);
             }
             return;

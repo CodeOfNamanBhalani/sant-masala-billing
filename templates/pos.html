@@ -294,9 +294,15 @@
                 <i class="bi bi-printer"></i>
                 Print Receipt
             </button>
-            <button class="btn btn-primary btn-lg" id="bluetooth-print" style="margin-left:8px;" onclick="bluetoothPrintReceipt()">
+            <button class="btn btn-primary btn-lg" id="bluetooth-print" style="margin-left:8px;"
+                onclick="bluetoothPrintReceipt()">
                 <i class="bi bi-bluetooth"></i>
                 Print via Bluetooth
+            </button>
+            <button class="btn btn-lg" id="wifi-print" style="margin-left:8px; background:var(--success); color:#fff;"
+                onclick="wifiPrintReceipt()">
+                <i class="bi bi-wifi"></i>
+                WiFi Print
             </button>
             <button class="btn btn-secondary" onclick="newOrder()">
                 New Order
@@ -865,6 +871,18 @@
         }
     }
 
+    async function wifiPrintReceipt() {
+        if (!lastOrder) return;
+        try {
+            localStorage.setItem('printerType', 'network');
+            const receiptData = await api.getReceiptData(lastOrder.id);
+            await ThermalPrinter.printNetwork(receiptData);
+            showToast('✅ Receipt sent to WiFi printer!');
+        } catch (error) {
+            showToast('WiFi print failed: ' + error.message, 'error');
+        }
+    }
+
     function newOrder() {
         closeModal('printModal');
         closeCart();
@@ -913,10 +931,17 @@
         if (printId) {
             // Auto-print receipt
             api.getReceiptData(printId).then(async data => {
+                const printerType = localStorage.getItem('printerType') || 'browser';
                 // If Bluetooth preferred and supported, auto-print via Bluetooth
-                if (localStorage.getItem('printerType') === 'bluetooth' && navigator.bluetooth) {
+                if (printerType === 'bluetooth' && navigator.bluetooth) {
                     await ThermalPrinter.autoReconnectPrinter();
                     await ThermalPrinter.printReceiptESCPOSEncode(data);
+                } else if (printerType === 'network') {
+                    try {
+                        await ThermalPrinter.printNetwork(data);
+                    } catch (e) {
+                        await ThermalPrinter.printReceipt(data);
+                    }
                 } else {
                     await ThermalPrinter.printReceipt(data);
                 }

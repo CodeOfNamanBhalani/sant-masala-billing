@@ -175,15 +175,42 @@
                         <div class="card-body">
                             <div class="form-group">
                                 <label class="form-label" data-i18n="printer_type">Printer Connection</label>
-                                <select class="form-control" id="printerType" style="width: 200px;">
+                                <select class="form-control" id="printerType" style="width: 200px;"
+                                    onchange="onPrinterTypeChange()">
                                     <option value="browser">Browser Print (Default)</option>
                                     <option value="usb">USB Thermal Printer</option>
                                     <option value="bluetooth">Bluetooth Thermal Printer</option>
+                                    <option value="network">📶 WiFi Printer (Network/LAN)</option>
                                 </select>
                                 <small class="text-muted d-block mt-1">
-                                    USB/Bluetooth requires compatible browser (Chrome/Edge)
+                                    USB/Bluetooth requires Chrome/Edge. WiFi requires printer on same network.
                                 </small>
                             </div>
+
+                            <!-- WiFi Printer IP/Port (shown only when network is selected) -->
+                            <div id="networkPrinterFields"
+                                style="display:none; background:var(--bg-tertiary); border-radius:10px; padding:14px; margin-bottom:12px;">
+                                <div style="font-weight:600; margin-bottom:10px;"><i class="bi bi-wifi"></i> WiFi
+                                    Printer Settings</div>
+                                <div class="form-group mb-2">
+                                    <label class="form-label">Printer IP Address</label>
+                                    <input type="text" class="form-control" id="printerIp"
+                                        placeholder="e.g. 192.168.1.100" style="width:200px;">
+                                    <small class="text-muted">Print a test page from printer to see its IP</small>
+                                </div>
+                                <div class="form-group mb-2">
+                                    <label class="form-label">Port</label>
+                                    <input type="number" class="form-control" id="printerPort" value="9100"
+                                        style="width:100px;">
+                                    <small class="text-muted">Default: 9100 for ESC/POS printers</small>
+                                </div>
+                                <button class="btn btn-outline btn-sm" onclick="testNetworkPrinter()"
+                                    id="testNetworkBtn">
+                                    <i class="bi bi-wifi"></i> Ping Printer
+                                </button>
+                                <span id="networkTestResult" style="margin-left:10px; font-weight:600;"></span>
+                            </div>
+
                             <div class="form-group">
                                 <label class="form-label" data-i18n="printer_width">Printer Paper Width</label>
                                 <select class="form-control" id="printerWidth" style="width: 200px;">
@@ -277,9 +304,16 @@
             document.getElementById('defaultLang').value = settings.language || 'en';
             document.getElementById('printerType').value = settings.printer_type || 'browser';
             document.getElementById('printerWidth').value = settings.printer_width || '58';
+            document.getElementById('printerIp').value = settings.printer_ip || '';
+            document.getElementById('printerPort').value = settings.printer_port || '9100';
 
             // Also update localStorage for printer
             localStorage.setItem('printerType', settings.printer_type || 'browser');
+            localStorage.setItem('printerIp', settings.printer_ip || '');
+            localStorage.setItem('printerPort', settings.printer_port || '9100');
+
+            // Show/hide WiFi fields
+            onPrinterTypeChange();
 
         } catch (error) {
             console.error('Failed to load settings:', error);
@@ -297,12 +331,16 @@
             tax_rate: document.getElementById('taxRate').value,
             language: document.getElementById('defaultLang').value,
             printer_type: document.getElementById('printerType').value,
-            printer_width: document.getElementById('printerWidth').value
+            printer_width: document.getElementById('printerWidth').value,
+            printer_ip: document.getElementById('printerIp').value.trim(),
+            printer_port: document.getElementById('printerPort').value.trim() || '9100'
         };
 
         try {
             await api.saveSettings(data);
             localStorage.setItem('printerType', data.printer_type);
+            localStorage.setItem('printerIp', data.printer_ip || '');
+            localStorage.setItem('printerPort', data.printer_port || '9100');
             showToast(t('saved_success'));
         } catch (error) {
             showToast(t('error_occurred'), 'error');
@@ -312,7 +350,47 @@
     function testPrinter() {
         const printerType = document.getElementById('printerType').value;
         localStorage.setItem('printerType', printerType);
+        if (printerType === 'network') {
+            const ip = document.getElementById('printerIp').value.trim();
+            const port = document.getElementById('printerPort').value.trim();
+            localStorage.setItem('printerIp', ip);
+            localStorage.setItem('printerPort', port);
+        }
         ThermalPrinter.testPrint();
+    }
+
+    function onPrinterTypeChange() {
+        const val = document.getElementById('printerType').value;
+        document.getElementById('networkPrinterFields').style.display = val === 'network' ? 'block' : 'none';
+    }
+
+    async function testNetworkPrinter() {
+        const ip = document.getElementById('printerIp').value.trim();
+        const port = parseInt(document.getElementById('printerPort').value) || 9100;
+        const resultEl = document.getElementById('networkTestResult');
+        const btn = document.getElementById('testNetworkBtn');
+        if (!ip) {
+            resultEl.textContent = '⚠️ Enter IP first';
+            resultEl.style.color = 'var(--warning)';
+            return;
+        }
+        btn.disabled = true;
+        resultEl.textContent = 'Pinging...';
+        resultEl.style.color = 'var(--text-muted)';
+        try {
+            const res = await ThermalPrinter.testNetworkConnection(ip, port);
+            if (res.reachable) {
+                resultEl.textContent = '✅ Printer reachable!';
+                resultEl.style.color = 'var(--success)';
+            } else {
+                resultEl.textContent = '❌ ' + (res.error || 'Not reachable');
+                resultEl.style.color = 'var(--danger)';
+            }
+        } catch (e) {
+            resultEl.textContent = '❌ Error: ' + e.message;
+            resultEl.style.color = 'var(--danger)';
+        }
+        btn.disabled = false;
     }
 
     function clearAllData() {

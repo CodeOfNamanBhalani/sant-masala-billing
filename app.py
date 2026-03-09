@@ -14,6 +14,7 @@ import json
 import os
 import uuid
 import base64
+import socket
 
 app = Flask(__name__, static_folder='static', template_folder='templates')
 CORS(app)
@@ -750,6 +751,65 @@ def print_receipt(order_id):
     }
     
     return jsonify(receipt_data)
+
+
+# ----- Network (WiFi) Printer API -----
+@app.route('/api/print/network', methods=['POST'])
+def network_print():
+    """
+    Send ESC/POS bytes directly to a WiFi thermal printer via TCP port 9100.
+    Body: { "data_b64": "<base64-encoded ESC/POS bytes>", "ip": "...", "port": 9100 }
+    """
+    body = request.json or {}
+    ip = body.get('ip') or Settings.get('printer_ip', '')
+    try:
+        port = int(body.get('port') or Settings.get('printer_port', '9100') or 9100)
+    except (ValueError, TypeError):
+        port = 9100
+
+    data_b64 = body.get('data_b64', '')
+
+    if not ip:
+        return jsonify({'success': False, 'error': 'Printer IP not configured'}), 400
+    if not data_b64:
+        return jsonify({'success': False, 'error': 'No print data provided'}), 400
+
+    try:
+        raw_bytes = base64.b64decode(data_b64)
+    except Exception as e:
+        return jsonify({'success': False, 'error': f'Invalid base64 data: {e}'}), 400
+
+    try:
+        with socket.create_connection((ip, port), timeout=5) as sock:
+            sock.sendall(raw_bytes)
+        return jsonify({'success': True, 'message': f'Sent {len(raw_bytes)} bytes to {ip}:{port}'})
+    except socket.timeout:
+        return jsonify({'success': False, 'error': f'Connection timed out ({ip}:{port})'}), 504
+    except ConnectionRefusedError:
+        return jsonify({'success': False, 'error': f'Connection refused ({ip}:{port}) – is the printer on?'}), 503
+    except OSError as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/print/test-network', methods=['POST'])
+def test_network_printer():
+    """Test if the WiFi printer is reachable. Body: { "ip": "...", "port": 9100 }"""
+    body = request.json or {}
+    ip = body.get('ip') or Settings.get('printer_ip', '')
+    try:
+        port = int(body.get('port') or Settings.get('printer_port', '9100') or 9100)
+    except (ValueError, TypeError):
+        port = 9100
+
+    if not ip:
+        return jsonify({'success': False, 'reachable': False, 'error': 'No IP provided'}), 400
+
+    try:
+        with socket.create_connection((ip, port), timeout=3):
+            pass
+        return jsonify({'success': True, 'reachable': True, 'message': f'Printer reachable at {ip}:{port}'})
+    except (socket.timeout, ConnectionRefusedError, OSError) as e:
+        return jsonify({'success': False, 'reachable': False, 'error': str(e)})
 
 
 # ==================== Initialize Database ====================
