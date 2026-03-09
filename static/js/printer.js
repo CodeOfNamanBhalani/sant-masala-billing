@@ -27,7 +27,7 @@ const ThermalPrinter = {
     // ESC/POS Commands
     ESC: '\x1B',
     GS: '\x1D',
-    
+
     // Command builders
     commands: {
         init: '\x1B\x40',                    // Initialize printer
@@ -56,19 +56,19 @@ const ThermalPrinter = {
         const width = this.settings.width;
         const divider = '-'.repeat(width);
         const doubleDivider = '='.repeat(width);
-        
+
         let receipt = '';
-        
+
         // Initialize
         receipt += this.commands.init;
-        
+
         // Header - Shop Name (centered, large)
         receipt += this.commands.alignCenter;
         receipt += this.commands.doubleSize;
         receipt += shop.name + '\n';
         receipt += this.commands.normalSize;
         receipt += shop.name_gu + '\n';
-        
+
         // Address and Phone
         receipt += this.commands.normalSize;
         if (shop.address) {
@@ -80,9 +80,9 @@ const ThermalPrinter = {
         if (shop.gst) {
             receipt += 'GST: ' + shop.gst + '\n';
         }
-        
+
         receipt += divider + '\n';
-        
+
         // Bill Info
         receipt += this.commands.alignLeft;
         receipt += this.commands.bold;
@@ -90,22 +90,22 @@ const ThermalPrinter = {
         receipt += this.commands.boldOff;
         receipt += 'Bill No: ' + order.order_number + '\n';
         receipt += 'Date: ' + order.created_at + '\n';
-        
+
         if (order.customer_name) {
             receipt += 'Customer: ' + order.customer_name + '\n';
         }
         if (order.customer_phone) {
             receipt += 'Phone: ' + order.customer_phone + '\n';
         }
-        
+
         receipt += doubleDivider + '\n';
-        
+
         // Items Header
         receipt += this.commands.bold;
         receipt += this.formatLine('Item', 'Qty', 'Amt', width);
         receipt += this.commands.boldOff;
         receipt += divider + '\n';
-        
+
         // Items
         order.items.forEach(item => {
             // Product name
@@ -113,36 +113,36 @@ const ThermalPrinter = {
             if (item.product_name_gu) {
                 receipt += '  ' + item.product_name_gu + '\n';
             }
-            
+
             // Weight and price on same line
             const weightText = `${item.weight}${item.weight_unit}x${item.quantity}`;
             const priceText = `@${item.price}`;
             const totalText = item.total.toFixed(2);
             receipt += this.formatLine('  ' + weightText, priceText, totalText, width);
         });
-        
+
         receipt += doubleDivider + '\n';
-        
+
         // Totals
         receipt += this.formatLine('Subtotal:', '', order.subtotal.toFixed(2), width);
-        
+
         if (order.discount > 0) {
             receipt += this.formatLine('Discount:', '', '-' + order.discount.toFixed(2), width);
         }
-        
+
         if (order.tax > 0) {
             receipt += this.formatLine('Tax:', '', order.tax.toFixed(2), width);
         }
-        
+
         receipt += divider + '\n';
         receipt += this.commands.bold;
         receipt += this.commands.doubleHeight;
         receipt += this.formatLine('TOTAL:', '', 'Rs.' + order.total.toFixed(2), width);
         receipt += this.commands.normalSize;
         receipt += this.commands.boldOff;
-        
+
         receipt += divider + '\n';
-        
+
         // Payment Info
         const paymentMap = {
             'cash': 'CASH / રોકડ',
@@ -150,20 +150,20 @@ const ThermalPrinter = {
             'card': 'CARD / કાર્ડ'
         };
         receipt += 'Payment: ' + (paymentMap[order.payment_method] || order.payment_method) + '\n';
-        
+
         receipt += '\n';
-        
+
         // Footer
         receipt += this.commands.alignCenter;
         receipt += 'Thank You! Visit Again!\n';
         receipt += 'આભાર! ફરી પધારો!\n';
         receipt += '\n';
         receipt += 'Terms & Conditions Apply\n';
-        
+
         // Feed and cut
         receipt += this.commands.feed(4);
         receipt += this.commands.cut;
-        
+
         return receipt;
     },
 
@@ -174,10 +174,10 @@ const ThermalPrinter = {
         left = left || '';
         center = center || '';
         right = right || '';
-        
+
         const totalLen = left.length + center.length + right.length;
         const padding = width - totalLen;
-        
+
         if (center) {
             const leftPad = Math.floor(padding / 2);
             const rightPad = padding - leftPad;
@@ -194,7 +194,7 @@ const ThermalPrinter = {
         if (!navigator.usb) {
             throw new Error('Web USB not supported in this browser');
         }
-        
+
         try {
             // Request USB device
             const device = await navigator.usb.requestDevice({
@@ -207,35 +207,35 @@ const ThermalPrinter = {
                     { vendorId: 0x0519 }, // Star Micronics
                 ]
             });
-            
+
             await device.open();
-            
+
             if (device.configuration === null) {
                 await device.selectConfiguration(1);
             }
-            
+
             await device.claimInterface(0);
-            
+
             // Find bulk out endpoint
             const endpointOut = device.configuration.interfaces[0].alternate.endpoints
                 .find(e => e.direction === 'out');
-            
+
             if (!endpointOut) {
                 throw new Error('No output endpoint found');
             }
-            
+
             // Convert text to bytes
             const encoder = new TextEncoder();
             const data = encoder.encode(receiptText);
-            
+
             // Send data
             await device.transferOut(endpointOut.endpointNumber, data);
-            
+
             await device.close();
-            
+
             console.log('Print sent to USB printer');
             return true;
-            
+
         } catch (error) {
             console.error('USB print error:', error);
             throw error;
@@ -367,7 +367,7 @@ const ThermalPrinter = {
      */
     printBrowser(receiptData) {
         const { shop, order } = receiptData;
-        
+
         // Create print-friendly HTML
         const html = `
             <!DOCTYPE html>
@@ -493,13 +493,13 @@ const ThermalPrinter = {
             </body>
             </html>
         `;
-        
+
         // Open print window
         const printWindow = window.open('', '_blank', 'width=300,height=600');
         printWindow.document.write(html);
         printWindow.document.close();
-        
-        printWindow.onload = function() {
+
+        printWindow.onload = function () {
             printWindow.focus();
             printWindow.print();
             // printWindow.close();
@@ -565,10 +565,9 @@ const ThermalPrinter = {
                 payment_method: 'cash'
             }
         };
-        
+
         await this.printReceipt(testData);
-    }
-};
+    },
 
     /**
      * Manual disconnect for Bluetooth printer
@@ -580,8 +579,10 @@ const ThermalPrinter = {
             this.bluetooth.characteristic = null;
             showToast('Bluetooth printer disconnected');
         }
-    },
+    }
 };
+
+
 
 // Export for use
 window.ThermalPrinter = ThermalPrinter;
