@@ -363,159 +363,234 @@ const ThermalPrinter = {
     },
 
     /**
-     * Print using browser's print dialog (fallback)
+     * Print using browser's print dialog (fallback) - 80mm Delivery Challan Style
      */
     printBrowser(receiptData) {
         const { shop, order } = receiptData;
 
+        // Build item rows with Sr number, Gujarati name, Qty, Rate, Total
+        let srNum = 1;
+        const itemRows = order.items.map(item => {
+            const name = item.product_name_gu || item.product_name;
+            const qty = `${item.weight}${item.weight_unit}`;
+            const rate = `${item.price}/kg`;
+            const total = `&#x20B9;${item.total.toFixed(2)}`;
+            return `
+                <tr>
+                    <td class="col-sr">${srNum++}</td>
+                    <td class="col-item">${name}</td>
+                    <td class="col-qty">${qty}</td>
+                    <td class="col-rate">${rate}</td>
+                    <td class="col-total">${total}</td>
+                </tr>`;
+        }).join('');
+
+        // Total qty (sum of quantities)
+        const totalQty = order.items.reduce((s, i) => s + i.quantity, 0).toFixed(2);
+
         // Create print-friendly HTML
-        const html = `
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <meta charset="UTF-8">
-                <title>Receipt - ${order.order_number}</title>
-                <style>
-                    @page {
-                        size: 58mm auto;
-                        margin: 2mm;
-                    }
-                    @media print {
-                        body {
-                            width: 58mm;
-                            margin: 0 auto;
-                            text-align: center;
-                        }
-                    }
-                    * {
-                        margin: 0;
-                        padding: 0;
-                        box-sizing: border-box;
-                    }
-                    body {
-                        font-family: 'Courier New', monospace;
-                        font-size: 18px;
-                        font-weight: 600;
-                        color: #000000;
-                        width: 54mm;
-                        max-width: 58mm;
-                        margin: auto;
-                        padding: 2mm;
-                        text-align: left;
-                    }
-                    .header {
-                        text-align: center;
-                        font-size: 22px;
-                        font-weight: bold;
-                        margin-bottom: 2mm;
-                        line-height: 1.4;
-                    }
-                    .header .shop-sub {
-                        font-size: 15px;
-                        font-weight: 600;
-                    }
-                    .center { text-align: center; }
-                    .bold { font-weight: bold; }
-                    .divider { border-top: 1px dashed #000; margin: 2mm 0; }
-                    .double { border-top: 1px solid #000; border-bottom: 1px solid #000; padding: 1mm 0; margin: 2mm 0; }
-                    table { width: 100%; border-collapse: collapse; font-size: 18px; }
-                    th { text-align: center; font-weight: bold; padding: 1mm 0; }
-                    td { padding: 1mm 0; vertical-align: top; text-align: center; }
-                    td:first-child { text-align: left; }
-                    td:last-child { text-align: right; }
-                    .total-row td { font-size: 22px; font-weight: 700; }
-                    .gujarati { font-family: 'Noto Sans Gujarati', sans-serif; }
-                    .footer { text-align: center; font-size: 14px; margin-top: 3mm; }
-                    .footer .terms { font-size: 11px; margin-top: 2mm; }
-                </style>
-            </head>
-            <body>
-                <div class="header">
-                    ${shop.name}<br>
-                    <span class="gujarati">${shop.name_gu}</span><br>
-                    ${shop.address ? `<span class="shop-sub">${shop.address}</span><br>` : ''}
-                    ${shop.phone ? `<span class="shop-sub">Ph: ${shop.phone}</span><br>` : ''}
-                    ${shop.gst ? `<span class="shop-sub">GST: ${shop.gst}</span>` : ''}
-                </div>
+        const html = `<!DOCTYPE html>
+<html lang="gu">
+<head>
+    <meta charset="UTF-8">
+    <title>Delivery Challan - ${order.order_number}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Gujarati:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        @page {
+            size: 80mm auto;
+            margin: 0;
+        }
+        @media print {
+            html, body {
+                width: 80mm;
+                margin: 0;
+                padding: 0;
+            }
+        }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Courier New', 'Noto Sans Gujarati', monospace;
+            font-size: 13px;
+            font-weight: 700;
+            color: #000;
+            width: 80mm;
+            margin: 0 auto;
+            padding: 2mm 2mm 4mm 2mm;
+            background: #fff;
+        }
 
-                <div class="divider"></div>
+        /* ── HEADER BOX ── */
+        .header-box {
+            border: 2px solid #000;
+            text-align: center;
+            padding: 3px 4px;
+            margin-bottom: 0;
+        }
+        .shop-name-en {
+            font-size: 20px;
+            font-weight: 900;
+            letter-spacing: 1px;
+            line-height: 1.2;
+        }
+        .shop-name-gu {
+            font-family: 'Noto Sans Gujarati', sans-serif;
+            font-size: 14px;
+            font-weight: 700;
+            line-height: 1.3;
+        }
+        .shop-address {
+            font-size: 11px;
+            font-weight: 600;
+            line-height: 1.4;
+        }
+        .shop-phone {
+            font-size: 12px;
+            font-weight: 700;
+        }
 
-                <div class="bold">BILL / બિલ</div>
-                <div>Bill No: ${order.order_number}</div>
-                <div>Date: ${order.created_at}</div>
-                ${order.customer_name ? `<div>Customer: ${order.customer_name}</div>` : ''}
-                ${order.customer_phone ? `<div>Phone: ${order.customer_phone}</div>` : ''}
+        /* ── TITLE BOX ── */
+        .title-box {
+            border: 2px solid #000;
+            border-top: none;
+            text-align: center;
+            padding: 3px 0;
+            font-size: 15px;
+            font-weight: 900;
+            letter-spacing: 2px;
+        }
 
-                <div class="double"></div>
+        /* ── BILL DETAILS BOX ── */
+        .details-box {
+            border: 2px solid #000;
+            border-top: none;
+            padding: 3px 5px;
+            font-size: 12px;
+        }
+        .details-row {
+            display: flex;
+            justify-content: space-between;
+            line-height: 1.6;
+        }
+        .details-divider {
+            border-top: 1px dashed #000;
+            margin: 2px 0;
+        }
 
-                <table>
-                    <tr>
-                        <th style="text-align:left;">Item</th>
-                        <th>Qty</th>
-                        <th style="text-align:right;">Amt</th>
-                    </tr>
-                </table>
+        /* ── ITEM TABLE ── */
+        .item-table {
+            width: 100%;
+            border-collapse: collapse;
+            border: 2px solid #000;
+            border-top: none;
+            font-size: 12px;
+        }
+        .item-table th,
+        .item-table td {
+            border: 1.5px solid #000;
+            padding: 3px 2px;
+            line-height: 1.3;
+        }
+        .item-table thead th {
+            text-align: center;
+            font-size: 12px;
+            font-weight: 900;
+            background: #fff;
+        }
 
-                <div class="divider"></div>
+        /* Column alignments */
+        .col-sr   { text-align: center; width: 22px;  white-space: nowrap; }
+        .col-item { text-align: left;   width: auto;  font-family: 'Noto Sans Gujarati', 'Courier New', monospace; }
+        .col-qty  { text-align: center; width: 38px;  white-space: nowrap; }
+        .col-rate { text-align: center; width: 46px;  white-space: nowrap; }
+        .col-total{ text-align: right;  width: 44px;  white-space: nowrap; }
 
-                <table>
-                    ${order.items.map(item => `
-                        <tr>
-                            <td colspan="3" style="text-align:left;">
-                                ${item.product_name}
-                                ${item.product_name_gu ? `<br><span class="gujarati">${item.product_name_gu}</span>` : ''}
-                            </td>
-                        </tr>
-                        <tr>
-                            <td style="text-align:left;">&nbsp;&nbsp;${item.weight}${item.weight_unit} @${item.price}</td>
-                            <td>${item.quantity}</td>
-                            <td>${item.total.toFixed(2)}</td>
-                        </tr>
-                    `).join('')}
-                </table>
+        /* ── TOTAL ROW (inside table) ── */
+        .total-row td {
+            font-size: 13px;
+            font-weight: 900;
+            background: #fff;
+        }
+        .total-row .col-item {
+            text-align: center;
+            font-weight: 900;
+        }
+        .total-row .col-total {
+            font-size: 14px;
+        }
 
-                <div class="double"></div>
+        /* ── FOOTER ── */
+        .footer {
+            border: 2px solid #000;
+            border-top: none;
+            text-align: center;
+            padding: 4px 2px;
+            font-size: 12px;
+            font-weight: 700;
+        }
+    </style>
+</head>
+<body>
 
-                <table>
-                    <tr>
-                        <td style="text-align:left;">Subtotal:</td>
-                        <td>${order.subtotal.toFixed(2)}</td>
-                    </tr>
-                    ${order.discount > 0 ? `
-                    <tr>
-                        <td style="text-align:left;">Discount:</td>
-                        <td>-${order.discount.toFixed(2)}</td>
-                    </tr>
-                    ` : ''}
-                    ${order.tax > 0 ? `
-                    <tr>
-                        <td style="text-align:left;">Tax:</td>
-                        <td>${order.tax.toFixed(2)}</td>
-                    </tr>
-                    ` : ''}
-                </table>
+    <!-- HEADER -->
+    <div class="header-box">
+        <div class="shop-name-en">${shop.name}</div>
+        <div class="shop-name-gu">${shop.name_gu || ''}</div>
+        ${shop.address ? `<div class="shop-address">${shop.address}</div>` : ''}
+        ${shop.phone ? `<div class="shop-phone">Mo: ${shop.phone}</div>` : ''}
+    </div>
 
-                <div class="divider"></div>
+    <!-- DELIVERY CHALLAN TITLE -->
+    <div class="title-box">DELIVERY CHALLAN</div>
 
-                <table>
-                    <tr class="total-row">
-                        <td style="text-align:left;">TOTAL:</td>
-                        <td>&#x20B9;${order.total.toFixed(2)}</td>
-                    </tr>
-                </table>
+    <!-- BILL DETAILS -->
+    <div class="details-box">
+        <div class="details-row">
+            <span>Bill No: <strong>${order.order_number}</strong></span>
+            <span>Date: <strong>${order.created_at}</strong></span>
+        </div>
+        <div class="details-divider"></div>
+        <div class="details-row">
+            <span>Buyer Name: <strong>${order.customer_name || '—'}</strong></span>
+        </div>
+        <div class="details-row">
+            <span>Mobile No: <strong>${order.customer_phone || '—'}</strong></span>
+        </div>
+    </div>
 
-                <div class="divider"></div>
+    <!-- ITEMS TABLE -->
+    <table class="item-table">
+        <thead>
+            <tr>
+                <th class="col-sr">Sr</th>
+                <th class="col-item">Item</th>
+                <th class="col-qty">Qty</th>
+                <th class="col-rate">Rate</th>
+                <th class="col-total">Total</th>
+            </tr>
+        </thead>
+        <tbody>
+            ${itemRows}
+            <!-- TOTAL ROW inside table -->
+            <tr class="total-row">
+                <td class="col-sr"></td>
+                <td class="col-item" style="text-align:center;font-weight:900;">Total</td>
+                <td class="col-qty">${totalQty}</td>
+                <td class="col-rate"></td>
+                <td class="col-total">&#x20B9;${order.total.toFixed(2)}</td>
+            </tr>
+        </tbody>
+    </table>
 
-                <div>Payment: ${order.payment_method.toUpperCase()}</div>
+    <!-- FOOTER -->
+    <div class="footer">Thank you for business with us.</div>
 
-                <div class="footer">
-                    <div>Thank You! Visit Again!</div>
-                    <div class="gujarati">આભાર! ફરી પધારો!</div>
-                    <div class="terms">Terms &amp; Conditions Apply</div>
-                </div>
-            </body>
-            </html>
-        `;
+</body>
+</html>`;
 
         // Open print window
         const printWindow = window.open('', '_blank', 'width=300,height=600');
