@@ -372,8 +372,15 @@ const ThermalPrinter = {
         const MIN_ROWS = 8; // minimum rows so bill is never too short
         const dataRows = order.items.map(item => {
             const name = item.product_name_gu || item.product_name;
-            const qty = `${item.weight}${item.weight_unit}`;
-            const rate = `${item.price}/kg`;
+            // For piece/packet: show "2x100g" if qty > 1, else "100g"
+            // For weight-based (kg/g): quantity is always 1, just show weight+unit
+            const weightStr = `${item.weight}${item.weight_unit}`;
+            const qty = (item.quantity && item.quantity > 1)
+                ? `${item.quantity}x${weightStr}`
+                : weightStr;
+            // Rate: show /kg only for weight-based items
+            const isWeightBased = item.weight_unit === 'kg' || item.weight_unit === 'g';
+            const rate = isWeightBased ? `${item.price}/kg` : `${item.price}`;
             const total = `&#x20B9;${item.total.toFixed(2)}`;
             return `
                 <tr>
@@ -429,7 +436,7 @@ const ThermalPrinter = {
         body {
             font-family: 'Courier New', 'Noto Sans Gujarati', monospace;
             font-size: 15px;
-            font-weight: 900;
+            font-weight: bolder;
             color: #000;
             width: 80mm;
             margin: 0 auto;
@@ -447,7 +454,7 @@ const ThermalPrinter = {
         }
         .shop-name-en {
             font-size: 24px;
-            font-weight: 900;
+            font-weight: bolder;
             letter-spacing: 1px;
             line-height: 1.2;
         }
@@ -459,12 +466,12 @@ const ThermalPrinter = {
         }
         .shop-address {
             font-size: 13px;
-            font-weight: 900;
+            font-weight: bolder;
             line-height: 1.4;
         }
         .shop-phone {
             font-size: 14px;
-            font-weight: 900;
+            font-weight: bolder;
         }
 
         /* ── TITLE BOX ── */
@@ -474,7 +481,7 @@ const ThermalPrinter = {
             text-align: center;
             padding: 5px 0;
             font-size: 18px;
-            font-weight: 900;
+            font-weight: bolder;
             letter-spacing: 3px;
         }
 
@@ -489,7 +496,7 @@ const ThermalPrinter = {
             display: flex;
             justify-content: space-between;
             line-height: 1.8;
-            font-weight: 900;
+            font-weight: bolder;
         }
         .details-divider {
             border-top: 1.5px dashed #000;
@@ -512,7 +519,7 @@ const ThermalPrinter = {
             border-right: 2px solid #000;  /* vertical column dividers */
             padding: 5px 4px;
             line-height: 1.4;
-            font-weight: 900;  /* force bold — browsers reset td to normal */
+            font-weight: bolder;  /* force bold — browsers reset td to normal */
         }
         /* Last column — no right border (outer box covers it) */
         .item-table th:last-child,
@@ -523,7 +530,7 @@ const ThermalPrinter = {
         .item-table thead th {
             text-align: center;
             font-size: 14px;
-            font-weight: 900;
+            font-weight: bolder;
             background: #fff;
             border-bottom: 2px solid #000;
         }
@@ -533,25 +540,25 @@ const ThermalPrinter = {
         }
 
         /* Column alignments — no Sr column */
-        .col-item { text-align: left;   width: auto;  font-family: 'Noto Sans Gujarati', 'Courier New', monospace; font-weight: 900; }
-        .col-qty  { text-align: center; width: 42px;  white-space: nowrap; font-weight: 900; }
-        .col-rate { text-align: center; width: 50px;  white-space: nowrap; font-weight: 900; }
-        .col-total{ text-align: right;  width: 50px;  white-space: nowrap; font-weight: 900; }
+        .col-item { text-align: left;   width: auto;  font-family: 'Noto Sans Gujarati', 'Courier New', monospace; font-weight: bolder; }
+        .col-qty  { text-align: center; width: 42px;  white-space: nowrap; font-weight: bolder; }
+        .col-rate { text-align: center; width: 50px;  white-space: nowrap; font-weight: bolder; }
+        .col-total{ text-align: right;  width: 50px;  white-space: nowrap; font-weight: bolder; }
 
         /* ── TOTAL ROW (inside table) ── */
         .total-row td {
             font-size: 15px;
-            font-weight: 900;
+            font-weight: bolder;
             background: #fff;
             border-top: 2px solid #000;  /* only top line to separate total */
         }
         .total-row .col-item {
             text-align: left;
-            font-weight: 900;
+            font-weight: bolder;
         }
         .total-row .col-total {
             font-size: 16px;
-            font-weight: 900;
+            font-weight: bolder;
         }
 
         /* ── FOOTER ── */
@@ -561,7 +568,7 @@ const ThermalPrinter = {
             text-align: center;
             padding: 6px 2px;
             font-size: 14px;
-            font-weight: 800;
+            font-weight: bolder;
         }
     </style>
 </head>

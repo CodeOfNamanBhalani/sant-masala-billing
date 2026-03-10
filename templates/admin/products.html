@@ -223,30 +223,27 @@
                 <div class="row g-3">
                     <div class="col-md-6">
                         <div class="form-group">
-                            <label class="form-label" data-i18n="image">Product Image</label>
+                            <label class="form-label" data-i18n="image">Product Image URL</label>
                             <div class="image-upload-container">
-                                <div class="image-preview" id="imagePreview">
-                                    <img id="previewImg" src="/static/images/spice-placeholder.jpg" alt="Preview">
-                                    <div class="image-overlay">
-                                        <i class="bi bi-camera"></i>
-                                        <span>Click to upload</span>
-                                    </div>
+                                <!-- Live preview -->
+                                <div class="image-preview" id="imagePreview" style="cursor:default;">
+                                    <img id="previewImg" src="/static/images/spice-placeholder.jpg" alt="Preview"
+                                        style="object-fit:contain;"
+                                        onerror="this.src='/static/images/spice-placeholder.jpg'">
                                 </div>
-                                <input type="file" id="imageFile" accept="image/*" style="display: none;"
-                                    onchange="handleImageUpload(this)">
+                                <!-- Always-visible URL input -->
                                 <input type="hidden" id="image">
-                                <div class="image-actions mt-2">
-                                    <button type="button" class="btn btn-sm btn-primary"
-                                        onclick="document.getElementById('imageFile').click()">
-                                        <i class="bi bi-upload"></i> Upload Image
-                                    </button>
-                                    <button type="button" class="btn btn-sm btn-secondary" onclick="toggleUrlInput()">
-                                        <i class="bi bi-link-45deg"></i> Use URL
-                                    </button>
-                                </div>
-                                <div id="urlInputContainer" style="display: none; margin-top: 10px;">
-                                    <input type="text" class="form-control" id="imageUrl" placeholder="https://..."
-                                        onchange="useImageUrl(this.value)">
+                                <div class="mt-2">
+                                    <input type="text" class="form-control" id="imageUrl"
+                                        placeholder="Paste image URL (e.g. https://i.imgur.com/...)"
+                                        oninput="useImageUrl(this.value)">
+                                    <small
+                                        style="color:var(--text-muted);font-size:0.78em;margin-top:4px;display:block;">
+                                        💡 Upload image to <a href="https://imgur.com" target="_blank">Imgur</a> or
+                                        <a href="https://imgbb.com" target="_blank">ImgBB</a> (free), then paste the
+                                        direct image link here.
+                                        Image URL is stored in database and will <strong>never disappear</strong>.
+                                    </small>
                                 </div>
                             </div>
                         </div>
@@ -418,6 +415,7 @@
         document.getElementById('productId').value = '';
         document.getElementById('productForm').reset();
         document.getElementById('pricesContainer').innerHTML = '';
+        resetImagePreview();
         // Default unit is kg — show price_per_kg section
         onUnitChange();
         document.querySelector('#modalTitle span').textContent = t('add_product');
@@ -584,72 +582,16 @@
     document.getElementById('searchInput').addEventListener('input', debounce(renderProducts, 300));
     document.getElementById('categoryFilter').addEventListener('change', loadProducts);
 
-    // Image Upload Functions
-    async function handleImageUpload(input) {
-        if (input.files && input.files[0]) {
-            const file = input.files[0];
-
-            // Show loading
-            showLoading();
-
-            try {
-                const formData = new FormData();
-                formData.append('file', file);
-
-                const response = await fetch('/api/upload', {
-                    method: 'POST',
-                    body: formData
-                });
-
-                const result = await response.json();
-
-                if (result.success) {
-                    document.getElementById('image').value = result.url;
-                    document.getElementById('previewImg').src = result.url;
-                    showToast('Image uploaded successfully');
-                } else {
-                    showToast(result.error || 'Upload failed', 'error');
-                }
-            } catch (error) {
-                console.error('Upload error:', error);
-                showToast('Failed to upload image', 'error');
-            }
-
-            hideLoading();
-        }
-    }
-
-    function toggleUrlInput() {
-        const container = document.getElementById('urlInputContainer');
-        container.style.display = container.style.display === 'none' ? 'block' : 'none';
-    }
-
     function useImageUrl(url) {
-        if (url) {
-            document.getElementById('image').value = url;
-            document.getElementById('previewImg').src = url;
-        }
+        document.getElementById('image').value = url || '';
+        document.getElementById('previewImg').src = url || '/static/images/spice-placeholder.jpg';
     }
 
     function resetImagePreview() {
         document.getElementById('previewImg').src = '/static/images/spice-placeholder.jpg';
         document.getElementById('image').value = '';
         document.getElementById('imageUrl').value = '';
-        document.getElementById('imageFile').value = '';
-        document.getElementById('urlInputContainer').style.display = 'none';
     }
-
-    // Update openAddModal to reset image
-    const originalOpenAddModal = openAddModal;
-    openAddModal = function () {
-        resetImagePreview();
-        originalOpenAddModal();
-    };
-
-    // Click on image preview to upload
-    document.getElementById('imagePreview').addEventListener('click', function () {
-        document.getElementById('imageFile').click();
-    });
 
     // Initialize — use IIFE since DOMContentLoaded may have already fired
     // when this inline script runs (scripts are at end of body)
