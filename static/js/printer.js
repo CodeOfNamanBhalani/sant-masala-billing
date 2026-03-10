@@ -483,6 +483,7 @@ const ThermalPrinter = {
             font-size: 18px;
             font-weight: bolder;
             letter-spacing: 3px;
+            font-family: 'Noto Sans Gujarati', 'Courier New', monospace;
         }
 
         /* ── BILL DETAILS BOX ── */
@@ -506,6 +507,7 @@ const ThermalPrinter = {
         /* ── ITEM TABLE ── */
         /* Outer border only; vertical column lines; header bottom; total-row top — NO row borders */
         .item-table {
+            font-family: 'Noto Sans Gujarati', 'Courier New', monospace;
             width: 100%;
             border-collapse: collapse;
             border: 2px solid #000;   /* outer box */
@@ -528,6 +530,7 @@ const ThermalPrinter = {
         }
         /* Header row bottom line */
         .item-table thead th {
+            font-family: 'Noto Sans Gujarati', 'Courier New', monospace;
             text-align: center;
             font-size: 14px;
             font-weight: bolder;
@@ -541,28 +544,32 @@ const ThermalPrinter = {
 
         /* Column alignments — no Sr column */
         .col-item { text-align: left;   width: auto;  font-family: 'Noto Sans Gujarati', 'Courier New', monospace; font-weight: bolder; }
-        .col-qty  { text-align: center; width: 42px;  white-space: nowrap; font-weight: bolder; }
-        .col-rate { text-align: center; width: 50px;  white-space: nowrap; font-weight: bolder; }
-        .col-total{ text-align: right;  width: 50px;  white-space: nowrap; font-weight: bolder; }
+        .col-qty  { text-align: center; width: 42px; font-family: 'Noto Sans Gujarati', 'Courier New', monospace; white-space: nowrap; font-weight: bolder; }
+        .col-rate { text-align: center; width: 50px; font-family: 'Noto Sans Gujarati', 'Courier New', monospace; white-space: nowrap; font-weight: bolder; }
+        .col-total{ text-align: right;  width: 50px; font-family: 'Noto Sans Gujarati', 'Courier New', monospace; white-space: nowrap; font-weight: bolder; }
 
         /* ── TOTAL ROW (inside table) ── */
         .total-row td {
+            font-family: 'Noto Sans Gujarati', 'Courier New', monospace;
             font-size: 15px;
             font-weight: bolder;
             background: #fff;
             border-top: 2px solid #000;  /* only top line to separate total */
         }
         .total-row .col-item {
+            font-family: 'Noto Sans Gujarati', 'Courier New', monospace;
             text-align: left;
             font-weight: bolder;
         }
         .total-row .col-total {
+            font-family: 'Noto Sans Gujarati', 'Courier New', monospace;
             font-size: 16px;
             font-weight: bolder;
         }
 
         /* ── FOOTER ── */
         .footer {
+            font-family: 'Noto Sans Gujarati', 'Courier New', monospace;
             border: 2px solid #000;
             border-top: none;
             text-align: center;
