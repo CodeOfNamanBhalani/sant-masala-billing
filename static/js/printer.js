@@ -368,9 +368,8 @@ const ThermalPrinter = {
     printBrowser(receiptData) {
         const { shop, order } = receiptData;
 
-        // Build item rows with Sr number, Gujarati name, Qty, Rate, Total
+        // Build item rows — no Sr column, Gujarati item names, Qty, Rate, Total
         const MIN_ROWS = 8; // minimum rows so bill is never too short
-        let srNum = 1;
         const dataRows = order.items.map(item => {
             const name = item.product_name_gu || item.product_name;
             const qty = `${item.weight}${item.weight_unit}`;
@@ -378,7 +377,6 @@ const ThermalPrinter = {
             const total = `&#x20B9;${item.total.toFixed(2)}`;
             return `
                 <tr>
-                    <td class="col-sr">${srNum++}</td>
                     <td class="col-item">${name}</td>
                     <td class="col-qty">${qty}</td>
                     <td class="col-rate">${rate}</td>
@@ -389,7 +387,6 @@ const ThermalPrinter = {
         const blankCount = Math.max(0, MIN_ROWS - dataRows.length);
         const blankRows = Array(blankCount).fill(
             `<tr class="blank-row">
-                <td class="col-sr">&nbsp;</td>
                 <td class="col-item">&nbsp;</td>
                 <td class="col-qty">&nbsp;</td>
                 <td class="col-rate">&nbsp;</td>
@@ -400,6 +397,9 @@ const ThermalPrinter = {
 
         // Total qty (sum of quantities)
         const totalQty = order.items.reduce((s, i) => s + i.quantity, 0).toFixed(2);
+
+        // Date only — strip time part (keep DD/MM/YYYY or whatever format before first space)
+        const dateOnly = (order.created_at || '').split(' ')[0].split(',')[0].trim();
 
         // Create print-friendly HTML
         const html = `<!DOCTYPE html>
@@ -496,46 +496,55 @@ const ThermalPrinter = {
         }
 
         /* ── ITEM TABLE ── */
+        /* Outer border only; vertical column lines; header bottom; total-row top — NO row borders */
         .item-table {
             width: 100%;
             border-collapse: collapse;
-            border: 2px solid #000;
+            border: 2px solid #000;   /* outer box */
             border-top: none;
             font-size: 14px;
         }
+        /* Remove ALL cell borders first */
         .item-table th,
         .item-table td {
-            border: 2px solid #000;
-            padding: 5px 3px;
+            border: none;
+            border-right: 2px solid #000;  /* vertical column dividers */
+            padding: 5px 4px;
             line-height: 1.4;
         }
+        /* Last column — no right border (outer box covers it) */
+        .item-table th:last-child,
+        .item-table td:last-child {
+            border-right: none;
+        }
+        /* Header row bottom line */
         .item-table thead th {
             text-align: center;
             font-size: 14px;
             font-weight: 900;
             background: #fff;
+            border-bottom: 2px solid #000;
         }
+        /* Blank rows keep same height, no extra borders */
         .blank-row td {
-            height: 22px;
-            border-color: #000;
+            height: 24px;
         }
 
-        /* Column alignments */
-        .col-sr   { text-align: center; width: 24px;  white-space: nowrap; font-weight: 800; }
+        /* Column alignments — no Sr column */
         .col-item { text-align: left;   width: auto;  font-family: 'Noto Sans Gujarati', 'Courier New', monospace; font-weight: 800; }
-        .col-qty  { text-align: center; width: 40px;  white-space: nowrap; font-weight: 800; }
-        .col-rate { text-align: center; width: 48px;  white-space: nowrap; font-weight: 800; }
-        .col-total{ text-align: right;  width: 46px;  white-space: nowrap; font-weight: 800; }
+        .col-qty  { text-align: center; width: 42px;  white-space: nowrap; font-weight: 800; }
+        .col-rate { text-align: center; width: 50px;  white-space: nowrap; font-weight: 800; }
+        .col-total{ text-align: right;  width: 50px;  white-space: nowrap; font-weight: 800; }
 
         /* ── TOTAL ROW (inside table) ── */
         .total-row td {
             font-size: 15px;
             font-weight: 900;
             background: #fff;
-            border-top: 2px solid #000;
+            border-top: 2px solid #000;  /* only top line to separate total */
         }
         .total-row .col-item {
-            text-align: center;
+            text-align: left;
             font-weight: 900;
         }
         .total-row .col-total {
@@ -569,24 +578,17 @@ const ThermalPrinter = {
 
     <!-- BILL DETAILS -->
     <div class="details-box">
-        <div class="details-row">
-            <span>Bill No: <strong>${order.order_number}</strong></span>
-            <span>Date: <strong>${order.created_at}</strong></span>
-        </div>
+        <div class="details-row">Bill No: <strong>${order.order_number}</strong></div>
+        <div class="details-row">Date: <strong>${dateOnly}</strong></div>
         <div class="details-divider"></div>
-        <div class="details-row">
-            <span>Buyer Name: <strong>${order.customer_name || 'Cash Ac'}</strong></span>
-        </div>
-        <div class="details-row">
-            <span>Mobile No: <strong>${order.customer_phone || '—'}</strong></span>
-        </div>
+        <div class="details-row">Buyer Name: <strong>${order.customer_name || 'Cash Ac'}</strong></div>
+        <div class="details-row">Mobile No: <strong>${order.customer_phone || '—'}</strong></div>
     </div>
 
     <!-- ITEMS TABLE -->
     <table class="item-table">
         <thead>
             <tr>
-                <th class="col-sr">Sr</th>
                 <th class="col-item">Item</th>
                 <th class="col-qty">Qty</th>
                 <th class="col-rate">Rate</th>
@@ -597,8 +599,7 @@ const ThermalPrinter = {
             ${itemRows}
             <!-- TOTAL ROW inside table -->
             <tr class="total-row">
-                <td class="col-sr"></td>
-                <td class="col-item" style="text-align:center;font-weight:900;">Total</td>
+                <td class="col-item"><strong>Total</strong></td>
                 <td class="col-qty">${totalQty}</td>
                 <td class="col-rate"></td>
                 <td class="col-total">&#x20B9;${order.total.toFixed(2)}</td>
