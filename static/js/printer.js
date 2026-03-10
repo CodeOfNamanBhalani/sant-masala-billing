@@ -429,7 +429,7 @@ const ThermalPrinter = {
         body {
             font-family: 'Courier New', 'Noto Sans Gujarati', monospace;
             font-size: 15px;
-            font-weight: 800;
+            font-weight: 900;
             color: #000;
             width: 80mm;
             margin: 0 auto;
@@ -459,12 +459,12 @@ const ThermalPrinter = {
         }
         .shop-address {
             font-size: 13px;
-            font-weight: 700;
+            font-weight: 900;
             line-height: 1.4;
         }
         .shop-phone {
             font-size: 14px;
-            font-weight: 800;
+            font-weight: 900;
         }
 
         /* ── TITLE BOX ── */
@@ -483,12 +483,13 @@ const ThermalPrinter = {
             border: 2px solid #000;
             border-top: none;
             padding: 4px 6px;
-            font-size: 14px;
+            font-size: 15px;
         }
         .details-row {
             display: flex;
             justify-content: space-between;
             line-height: 1.8;
+            font-weight: 900;
         }
         .details-divider {
             border-top: 1.5px dashed #000;
@@ -502,7 +503,7 @@ const ThermalPrinter = {
             border-collapse: collapse;
             border: 2px solid #000;   /* outer box */
             border-top: none;
-            font-size: 14px;
+            font-size: 15px;
         }
         /* Remove ALL cell borders first */
         .item-table th,
@@ -511,6 +512,7 @@ const ThermalPrinter = {
             border-right: 2px solid #000;  /* vertical column dividers */
             padding: 5px 4px;
             line-height: 1.4;
+            font-weight: 900;  /* force bold — browsers reset td to normal */
         }
         /* Last column — no right border (outer box covers it) */
         .item-table th:last-child,
@@ -531,10 +533,10 @@ const ThermalPrinter = {
         }
 
         /* Column alignments — no Sr column */
-        .col-item { text-align: left;   width: auto;  font-family: 'Noto Sans Gujarati', 'Courier New', monospace; font-weight: 800; }
-        .col-qty  { text-align: center; width: 42px;  white-space: nowrap; font-weight: 800; }
-        .col-rate { text-align: center; width: 50px;  white-space: nowrap; font-weight: 800; }
-        .col-total{ text-align: right;  width: 50px;  white-space: nowrap; font-weight: 800; }
+        .col-item { text-align: left;   width: auto;  font-family: 'Noto Sans Gujarati', 'Courier New', monospace; font-weight: 900; }
+        .col-qty  { text-align: center; width: 42px;  white-space: nowrap; font-weight: 900; }
+        .col-rate { text-align: center; width: 50px;  white-space: nowrap; font-weight: 900; }
+        .col-total{ text-align: right;  width: 50px;  white-space: nowrap; font-weight: 900; }
 
         /* ── TOTAL ROW (inside table) ── */
         .total-row td {
