@@ -363,14 +363,15 @@ const ThermalPrinter = {
     },
 
     /**
-     * Print using browser's print dialog (fallback) - 80mm Delivery Challan Style
+     * Print using browser's print dialog (fallback) - 80mm Bill Style
      */
     printBrowser(receiptData) {
         const { shop, order } = receiptData;
 
         // Build item rows with Sr number, Gujarati name, Qty, Rate, Total
+        const MIN_ROWS = 8; // minimum rows so bill is never too short
         let srNum = 1;
-        const itemRows = order.items.map(item => {
+        const dataRows = order.items.map(item => {
             const name = item.product_name_gu || item.product_name;
             const qty = `${item.weight}${item.weight_unit}`;
             const rate = `${item.price}/kg`;
@@ -383,7 +384,19 @@ const ThermalPrinter = {
                     <td class="col-rate">${rate}</td>
                     <td class="col-total">${total}</td>
                 </tr>`;
-        }).join('');
+        });
+        // Pad with blank rows to reach minimum height
+        const blankCount = Math.max(0, MIN_ROWS - dataRows.length);
+        const blankRows = Array(blankCount).fill(
+            `<tr class="blank-row">
+                <td class="col-sr">&nbsp;</td>
+                <td class="col-item">&nbsp;</td>
+                <td class="col-qty">&nbsp;</td>
+                <td class="col-rate">&nbsp;</td>
+                <td class="col-total">&nbsp;</td>
+            </tr>`
+        );
+        const itemRows = [...dataRows, ...blankRows].join('');
 
         // Total qty (sum of quantities)
         const totalQty = order.items.reduce((s, i) => s + i.quantity, 0).toFixed(2);
@@ -393,7 +406,7 @@ const ThermalPrinter = {
 <html lang="gu">
 <head>
     <meta charset="UTF-8">
-    <title>Delivery Challan - ${order.order_number}</title>
+    <title>Bill - ${order.order_number}</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Gujarati:wght@400;700&display=swap" rel="stylesheet">
     <style>
@@ -415,13 +428,14 @@ const ThermalPrinter = {
         }
         body {
             font-family: 'Courier New', 'Noto Sans Gujarati', monospace;
-            font-size: 13px;
-            font-weight: 700;
+            font-size: 15px;
+            font-weight: 800;
             color: #000;
             width: 80mm;
             margin: 0 auto;
             padding: 2mm 2mm 4mm 2mm;
             background: #fff;
+            -webkit-print-color-adjust: exact;
         }
 
         /* ── HEADER BOX ── */
@@ -432,25 +446,25 @@ const ThermalPrinter = {
             margin-bottom: 0;
         }
         .shop-name-en {
-            font-size: 20px;
+            font-size: 24px;
             font-weight: 900;
             letter-spacing: 1px;
             line-height: 1.2;
         }
         .shop-name-gu {
             font-family: 'Noto Sans Gujarati', sans-serif;
-            font-size: 14px;
-            font-weight: 700;
+            font-size: 17px;
+            font-weight: 800;
             line-height: 1.3;
         }
         .shop-address {
-            font-size: 11px;
-            font-weight: 600;
+            font-size: 13px;
+            font-weight: 700;
             line-height: 1.4;
         }
         .shop-phone {
-            font-size: 12px;
-            font-weight: 700;
+            font-size: 14px;
+            font-weight: 800;
         }
 
         /* ── TITLE BOX ── */
@@ -458,27 +472,27 @@ const ThermalPrinter = {
             border: 2px solid #000;
             border-top: none;
             text-align: center;
-            padding: 3px 0;
-            font-size: 15px;
+            padding: 5px 0;
+            font-size: 18px;
             font-weight: 900;
-            letter-spacing: 2px;
+            letter-spacing: 3px;
         }
 
         /* ── BILL DETAILS BOX ── */
         .details-box {
             border: 2px solid #000;
             border-top: none;
-            padding: 3px 5px;
-            font-size: 12px;
+            padding: 4px 6px;
+            font-size: 14px;
         }
         .details-row {
             display: flex;
             justify-content: space-between;
-            line-height: 1.6;
+            line-height: 1.8;
         }
         .details-divider {
-            border-top: 1px dashed #000;
-            margin: 2px 0;
+            border-top: 1.5px dashed #000;
+            margin: 3px 0;
         }
 
         /* ── ITEM TABLE ── */
@@ -487,40 +501,46 @@ const ThermalPrinter = {
             border-collapse: collapse;
             border: 2px solid #000;
             border-top: none;
-            font-size: 12px;
+            font-size: 14px;
         }
         .item-table th,
         .item-table td {
-            border: 1.5px solid #000;
-            padding: 3px 2px;
-            line-height: 1.3;
+            border: 2px solid #000;
+            padding: 5px 3px;
+            line-height: 1.4;
         }
         .item-table thead th {
             text-align: center;
-            font-size: 12px;
+            font-size: 14px;
             font-weight: 900;
             background: #fff;
         }
+        .blank-row td {
+            height: 22px;
+            border-color: #000;
+        }
 
         /* Column alignments */
-        .col-sr   { text-align: center; width: 22px;  white-space: nowrap; }
-        .col-item { text-align: left;   width: auto;  font-family: 'Noto Sans Gujarati', 'Courier New', monospace; }
-        .col-qty  { text-align: center; width: 38px;  white-space: nowrap; }
-        .col-rate { text-align: center; width: 46px;  white-space: nowrap; }
-        .col-total{ text-align: right;  width: 44px;  white-space: nowrap; }
+        .col-sr   { text-align: center; width: 24px;  white-space: nowrap; font-weight: 800; }
+        .col-item { text-align: left;   width: auto;  font-family: 'Noto Sans Gujarati', 'Courier New', monospace; font-weight: 800; }
+        .col-qty  { text-align: center; width: 40px;  white-space: nowrap; font-weight: 800; }
+        .col-rate { text-align: center; width: 48px;  white-space: nowrap; font-weight: 800; }
+        .col-total{ text-align: right;  width: 46px;  white-space: nowrap; font-weight: 800; }
 
         /* ── TOTAL ROW (inside table) ── */
         .total-row td {
-            font-size: 13px;
+            font-size: 15px;
             font-weight: 900;
             background: #fff;
+            border-top: 2px solid #000;
         }
         .total-row .col-item {
             text-align: center;
             font-weight: 900;
         }
         .total-row .col-total {
-            font-size: 14px;
+            font-size: 16px;
+            font-weight: 900;
         }
 
         /* ── FOOTER ── */
@@ -528,9 +548,9 @@ const ThermalPrinter = {
             border: 2px solid #000;
             border-top: none;
             text-align: center;
-            padding: 4px 2px;
-            font-size: 12px;
-            font-weight: 700;
+            padding: 6px 2px;
+            font-size: 14px;
+            font-weight: 800;
         }
     </style>
 </head>
@@ -544,8 +564,8 @@ const ThermalPrinter = {
         ${shop.phone ? `<div class="shop-phone">Mo: ${shop.phone}</div>` : ''}
     </div>
 
-    <!-- DELIVERY CHALLAN TITLE -->
-    <div class="title-box">DELIVERY CHALLAN</div>
+    <!-- BILL TITLE -->
+    <div class="title-box">BILL</div>
 
     <!-- BILL DETAILS -->
     <div class="details-box">
@@ -555,7 +575,7 @@ const ThermalPrinter = {
         </div>
         <div class="details-divider"></div>
         <div class="details-row">
-            <span>Buyer Name: <strong>${order.customer_name || '—'}</strong></span>
+            <span>Buyer Name: <strong>${order.customer_name || 'Cash Ac'}</strong></span>
         </div>
         <div class="details-row">
             <span>Mobile No: <strong>${order.customer_phone || '—'}</strong></span>
