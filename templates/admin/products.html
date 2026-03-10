@@ -237,12 +237,14 @@
                                     <input type="text" class="form-control" id="imageUrl"
                                         placeholder="Paste image URL (e.g. https://i.imgur.com/...)"
                                         oninput="useImageUrl(this.value)">
-                                    <small
+                                    <small id="imageHint"
                                         style="color:var(--text-muted);font-size:0.78em;margin-top:4px;display:block;">
-                                        💡 Upload image to <a href="https://imgur.com" target="_blank">Imgur</a> or
-                                        <a href="https://imgbb.com" target="_blank">ImgBB</a> (free), then paste the
-                                        direct image link here.
-                                        Image URL is stored in database and will <strong>never disappear</strong>.
+                                        💡 <strong>2 ways to add image:</strong><br>
+                                        1️⃣ <strong>Imgur:</strong> Upload at <a href="https://imgur.com"
+                                            target="_blank">imgur.com</a> → right-click the image → <em>Copy Image
+                                            Address</em> (URL must start with <code>https://i.imgur.com/</code>)<br>
+                                        2️⃣ <strong>Any web image:</strong> Right-click any image on Google → <em>Copy
+                                            Image</em> → paste here ✅ (saves directly to database)
                                     </small>
                                 </div>
                             </div>
@@ -583,8 +585,42 @@
     document.getElementById('categoryFilter').addEventListener('change', loadProducts);
 
     function useImageUrl(url) {
-        document.getElementById('image').value = url || '';
-        document.getElementById('previewImg').src = url || '/static/images/spice-placeholder.jpg';
+        if (!url) {
+            document.getElementById('image').value = '';
+            document.getElementById('previewImg').src = '/static/images/spice-placeholder.jpg';
+            document.getElementById('imageHint').innerHTML = `
+                💡 <strong>2 ways to add image:</strong><br>
+                1️⃣ <strong>Imgur:</strong> Upload at <a href="https://imgur.com" target="_blank">imgur.com</a> → right-click image → <em>Copy Image Address</em> (must start with <code>https://i.imgur.com/</code>)<br>
+                2️⃣ <strong>Any web image:</strong> Right-click any image on Google → <em>Copy Image</em> → paste here directly ✅`;
+            return;
+        }
+
+        // Detect wrong Imgur page URL (imgur.com/abc) vs correct direct link (i.imgur.com/abc.jpg)
+        if (/^https?:\/\/(www\.)?imgur\.com\/(?!a\/)([a-zA-Z0-9]+)$/.test(url)) {
+            const id = url.split('/').pop();
+            const directUrl = `https://i.imgur.com/${id}.jpg`;
+            document.getElementById('imageHint').innerHTML =
+                `⚠️ That's the <strong>Imgur page URL</strong>, not the image. Auto-corrected to direct link: <code>${directUrl}</code>`;
+            document.getElementById('imageUrl').value = directUrl;
+            document.getElementById('image').value = directUrl;
+            document.getElementById('previewImg').src = directUrl;
+            return;
+        }
+
+        // Base64 data URL — works! Store directly in DB (column is now Text)
+        if (url.startsWith('data:image/')) {
+            document.getElementById('image').value = url;
+            document.getElementById('previewImg').src = url;
+            document.getElementById('imageHint').innerHTML =
+                `✅ <strong>Image pasted directly</strong> — will be saved permanently in database. No external hosting needed!`;
+            return;
+        }
+
+        // Normal URL
+        document.getElementById('image').value = url;
+        document.getElementById('previewImg').src = url;
+        document.getElementById('imageHint').innerHTML =
+            `✅ Image URL set. Preview shown above.`;
     }
 
     function resetImagePreview() {
