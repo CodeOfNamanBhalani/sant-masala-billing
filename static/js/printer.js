@@ -624,7 +624,7 @@ const ThermalPrinter = {
     </table>
 
     <!-- FOOTER -->
-    <div class="footer">Thank you for business with us.</div>
+    <div class="footer">આભાર! ફરી પધારો!</div>
 
 </body>
 </html>`;

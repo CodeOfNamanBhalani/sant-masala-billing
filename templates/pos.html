@@ -347,7 +347,9 @@
 {% block extra_js %}
 <script src="/static/js/printer.js"></script>
 <script>
-    // State
+    // =========================================================
+    // STATE
+    // =========================================================
     let products = [];
     let categories = [];
     let cart = [];
@@ -356,49 +358,90 @@
     let paymentMethod = 'cash';
     let lastOrder = null;
 
-    // Load Data
-    async function loadCategories() {
+    // Rendering pagination state (reset on each filter/search)
+    const PAGE_SIZE = 60;
+    let currentFiltered = [];   // full filtered list
+    let renderedCount = 0;      // how many cards are in the DOM
+
+    // Cache constants
+    const POS_CACHE_KEY = 'pos_data_v1';
+    const POS_CACHE_TS  = 'pos_data_ts';
+    const CACHE_TTL_MS  = 5 * 60 * 1000;  // 5 minutes
+
+    // =========================================================
+    // DATA LOADING — single /api/pos-data call + localStorage cache
+    // =========================================================
+    function applyPosData(data) {
+        products   = data.products   || [];
+        categories = data.categories || [];
+        renderCategoryTabs();
+        renderProducts();
+    }
+
+    function renderCategoryTabs() {
+        const lang = getCurrentLang();
+        const tabs = document.getElementById('categoryTabs');
+        tabs.innerHTML =
+            `<button class="category-tab active" data-id="all" onclick="filterCategory('all')">${lang === 'gu' ? 'બધા' : 'All'}</button>` +
+            categories.map(c =>
+                `<button class="category-tab" data-id="${c.id}" onclick="filterCategory(${c.id})">${lang === 'gu' ? c.name_gu : c.name_en}</button>`
+            ).join('');
+    }
+
+    async function loadPosData() {
         try {
-            categories = await api.getCategories();
-            const tabs = document.getElementById('categoryTabs');
-            tabs.innerHTML = `
-                <button class="category-tab active" data-id="all" onclick="filterCategory('all')">
-                    ${getCurrentLang() === 'gu' ? 'બધા' : 'All'}
-                </button>
-            ` + categories.filter(c => c.is_active).map(c => `
-                <button class="category-tab" data-id="${c.id}" onclick="filterCategory(${c.id})">
-                    ${getCurrentLang() === 'gu' ? c.name_gu : c.name_en}
-                </button>
-            `).join('');
+            // 1. Try localStorage cache first for instant render
+            const cached = localStorage.getItem(POS_CACHE_KEY);
+            const cachedTs = parseInt(localStorage.getItem(POS_CACHE_TS) || '0');
+            const cacheAge = Date.now() - cachedTs;
+            const cacheValid = cached && cacheAge < CACHE_TTL_MS;
+
+            if (cacheValid) {
+                // Render immediately from cache (instant)
+                applyPosData(JSON.parse(cached));
+            }
+
+            // 2. Always fetch fresh data from server (background if cache hit)
+            const freshData = await api.getPosData();
+
+            // Update localStorage
+            localStorage.setItem(POS_CACHE_KEY, JSON.stringify(freshData));
+            localStorage.setItem(POS_CACHE_TS, String(Date.now()));
+
+            if (!cacheValid) {
+                // First load: apply fresh data
+                applyPosData(freshData);
+            }
+            // If cache was used, silently update in-memory state for next interaction
+            // without re-rendering (avoids flicker mid-use)
+            else {
+                products   = freshData.products   || [];
+                categories = freshData.categories || [];
+            }
+
         } catch (error) {
-            console.error('Failed to load categories:', error);
+            console.error('Failed to load POS data:', error);
+            if (!products.length) {
+                document.getElementById('productGrid').innerHTML = `
+                    <div style="grid-column: 1/-1; text-align: center; padding: 40px; color: var(--text-muted);">
+                        <i class="bi bi-exclamation-circle" style="font-size: 2rem;"></i>
+                        <p>Failed to load products</p>
+                    </div>`;
+            }
         }
     }
 
-    async function loadProducts() {
-        try {
-            products = await api.getProducts({ active: true });
-            renderProducts();
-        } catch (error) {
-            console.error('Failed to load products:', error);
-            document.getElementById('productGrid').innerHTML = `
-                <div style="grid-column: 1/-1; text-align: center; padding: 40px; color: var(--text-muted);">
-                    <i class="bi bi-exclamation-circle" style="font-size: 2rem;"></i>
-                    <p>Failed to load products</p>
-                </div>
-            `;
-        }
-    }
-
+    // =========================================================
+    // RENDERING — paginated (first 60, then Load More)
+    // =========================================================
     function renderProducts(categoryFilter = null, searchTerm = '') {
         const grid = document.getElementById('productGrid');
 
+        // Build the full filtered list (in-memory — instant even for 5000 products)
         let filtered = products;
-
         if (categoryFilter && categoryFilter !== 'all') {
             filtered = filtered.filter(p => p.category_id === categoryFilter);
         }
-
         if (searchTerm) {
             const search = searchTerm.toLowerCase();
             filtered = filtered.filter(p =>
@@ -407,45 +450,85 @@
             );
         }
 
+        currentFiltered = filtered;
+        renderedCount   = 0;
+
         if (filtered.length === 0) {
             grid.innerHTML = `
                 <div style="grid-column: 1/-1; text-align: center; padding: 40px; color: var(--text-muted);">
                     <i class="bi bi-search" style="font-size: 2rem;"></i>
                     <p data-i18n="no_products">No products found</p>
-                </div>
-            `;
+                </div>`;
             return;
         }
 
-        const lang = getCurrentLang();
-        grid.innerHTML = filtered.map(p => {
-            const defaultPrice = p.prices.find(pr => pr.is_default) || p.prices[0];
-            const priceText = defaultPrice ? `₹${defaultPrice.price}` : '-';
-            const weightText = defaultPrice ? `/${defaultPrice.weight}${defaultPrice.weight_unit}` : '';
+        grid.innerHTML = '';
+        appendProductCards(grid);
+    }
 
-            return `
-            <div class="product-card" onclick="selectProduct(${p.id})">
-                <img src="${p.image || '/static/images/spice-placeholder.jpg'}" alt="${p.name_en}" class="product-card-img" 
-                    onerror="this.src='/static/images/spice-placeholder.jpg'">
-                <div class="product-card-body">
-                    <h4 class="product-card-name">${lang === 'gu' ? p.name_gu : p.name_en}</h4>
-                    <p class="product-card-name-gu ${lang === 'gu' ? '' : 'gujarati'}">${lang === 'gu' ? p.name_en : p.name_gu}</p>
-                     
-                </div>
+    function buildProductCard(p) {
+        const lang = getCurrentLang();
+        return `
+        <div class="product-card" onclick="selectProduct(${p.id})">
+            <img src="${p.image || '/static/images/spice-placeholder.jpg'}"
+                alt="${p.name_en}"
+                class="product-card-img"
+                loading="lazy"
+                onerror="this.src='/static/images/spice-placeholder.jpg'">
+            <div class="product-card-body">
+                <h4 class="product-card-name">${lang === 'gu' ? p.name_gu : p.name_en}</h4>
+                <p class="product-card-name-gu ${lang === 'gu' ? '' : 'gujarati'}">${lang === 'gu' ? p.name_en : p.name_gu}</p>
             </div>
-        `}).join('');
+        </div>`;
+    }
+
+    function appendProductCards(grid) {
+        const slice = currentFiltered.slice(renderedCount, renderedCount + PAGE_SIZE);
+        renderedCount += slice.length;
+
+        // Remove existing Load More button if present
+        const existing = grid.querySelector('.load-more-btn');
+        if (existing) existing.remove();
+
+        // Append new cards
+        const fragment = document.createDocumentFragment();
+        slice.forEach(p => {
+            const wrapper = document.createElement('div');
+            wrapper.innerHTML = buildProductCard(p).trim();
+            fragment.appendChild(wrapper.firstChild);
+        });
+        grid.appendChild(fragment);
+
+        // Add Load More button if there are remaining products
+        if (renderedCount < currentFiltered.length) {
+            const remaining = currentFiltered.length - renderedCount;
+            const loadMoreWrapper = document.createElement('div');
+            loadMoreWrapper.style.cssText = 'grid-column: 1/-1; text-align: center; padding: 8px 0 16px;';
+            loadMoreWrapper.innerHTML = `
+                <button class="btn btn-outline load-more-btn"
+                    onclick="loadMoreProducts()"
+                    style="min-width: 200px;">
+                    <i class="bi bi-arrow-down-circle"></i>
+                    Load ${Math.min(remaining, PAGE_SIZE)} more (${remaining} remaining)
+                </button>`;
+            grid.appendChild(loadMoreWrapper);
+        }
+    }
+
+    function loadMoreProducts() {
+        appendProductCards(document.getElementById('productGrid'));
     }
 
     function filterCategory(categoryId) {
-        // Update active tab
         document.querySelectorAll('.category-tab').forEach(tab => {
             tab.classList.toggle('active', tab.dataset.id == categoryId);
         });
-
         renderProducts(categoryId === 'all' ? null : parseInt(categoryId), document.getElementById('productSearch').value);
     }
 
-    // Product Selection
+    // =========================================================
+    // PRODUCT SELECTION (unchanged functionality)
+    // =========================================================
     function selectProduct(productId) {
         selectedProduct = products.find(p => p.id === productId);
         if (!selectedProduct) return;
@@ -463,7 +546,6 @@
         const isKgProduct = (selectedProduct.unit === 'kg' || selectedProduct.unit === 'g') && selectedProduct.price_per_kg;
 
         if (isKgProduct) {
-            // === Weight-based product: show kg input ===
             document.getElementById('kgInputSection').style.display = 'block';
             document.getElementById('variantButtonsSection').style.display = 'none';
             document.getElementById('kgRateDisplay').textContent = `\u20b9${selectedProduct.price_per_kg}/kg`;
@@ -471,7 +553,6 @@
             document.getElementById('kgPricePreview').textContent = '';
             selectedPrice = { id: null, price: selectedProduct.price_per_kg, weight_unit: 'kg' };
         } else {
-            // === Piece / Packet product: show variant buttons ===
             document.getElementById('kgInputSection').style.display = 'none';
             document.getElementById('variantButtonsSection').style.display = 'block';
 
@@ -498,7 +579,6 @@
         openModal('weightModal');
     }
 
-    // Live price preview for kg input
     function updateKgPricePreview() {
         const weightVal = parseFloat(document.getElementById('kgWeightInput').value);
         const preview = document.getElementById('kgPricePreview');
@@ -512,8 +592,6 @@
 
     function selectWeight(priceId) {
         selectedPrice = selectedProduct.prices.find(p => p.id === priceId);
-
-        // Update button styles
         document.querySelectorAll('.weight-option').forEach(btn => {
             const isPrimary = parseInt(btn.dataset.priceId) === priceId;
             btn.className = `btn ${isPrimary ? 'btn-primary' : 'btn-outline'} weight-option`;
@@ -522,8 +600,7 @@
 
     function changeQty(delta) {
         const input = document.getElementById('modalQty');
-        const newVal = Math.max(1, parseInt(input.value) + delta);
-        input.value = newVal;
+        input.value = Math.max(1, parseInt(input.value) + delta);
     }
 
     function confirmAddToCart() {
@@ -532,7 +609,6 @@
         const isKgProduct = (selectedProduct.unit === 'kg' || selectedProduct.unit === 'g') && selectedProduct.price_per_kg;
 
         if (isKgProduct) {
-            // Weight-based: use the entered kg value
             const weightVal = parseFloat(document.getElementById('kgWeightInput').value);
             if (!weightVal || weightVal <= 0) {
                 showToast('Please enter a valid weight in kg', 'warning');
@@ -541,40 +617,19 @@
             const pricePerKg = selectedProduct.price_per_kg;
             const total = parseFloat((pricePerKg * weightVal).toFixed(2));
 
-            // For kg items we allow adding multiple if same product (accumulate weight)
-            const existingIndex = cart.findIndex(item =>
-                item.product_id === selectedProduct.id && item.is_kg_item
-            );
-            if (existingIndex >= 0) {
-                // Add a fresh entry for the new weight (separate line)
-                cart.push({
-                    product_id: selectedProduct.id,
-                    price_id: null,
-                    is_kg_item: true,
-                    product_name: selectedProduct.name_en,
-                    product_name_gu: selectedProduct.name_gu,
-                    weight: weightVal,
-                    weight_unit: 'kg',
-                    quantity: 1,
-                    price: pricePerKg,
-                    total: total
-                });
-            } else {
-                cart.push({
-                    product_id: selectedProduct.id,
-                    price_id: null,
-                    is_kg_item: true,
-                    product_name: selectedProduct.name_en,
-                    product_name_gu: selectedProduct.name_gu,
-                    weight: weightVal,
-                    weight_unit: 'kg',
-                    quantity: 1,
-                    price: pricePerKg,
-                    total: total
-                });
-            }
+            cart.push({
+                product_id: selectedProduct.id,
+                price_id: null,
+                is_kg_item: true,
+                product_name: selectedProduct.name_en,
+                product_name_gu: selectedProduct.name_gu,
+                weight: weightVal,
+                weight_unit: 'kg',
+                quantity: 1,
+                price: pricePerKg,
+                total: total
+            });
         } else {
-            // Piece / Packet: use selected price variant + qty
             const qty = parseInt(document.getElementById('modalQty').value);
             const existingIndex = cart.findIndex(item =>
                 item.product_id === selectedProduct.id && item.price_id == selectedPrice.id
@@ -603,7 +658,9 @@
         showToast(`${selectedProduct.name_en} added to cart`);
     }
 
-    // Cart Functions
+    // =========================================================
+    // CART (unchanged functionality)
+    // =========================================================
     function renderCart() {
         const container = document.getElementById('cartItems');
 
@@ -613,8 +670,7 @@
                     <i class="bi bi-cart-x" style="font-size: 3rem;"></i>
                     <p data-i18n="empty_cart">Cart is empty</p>
                     <small>Click products to add</small>
-                </div>
-            `;
+                </div>`;
             updateTotals();
             return;
         }
@@ -649,8 +705,7 @@
                     ${qtyControls}
                     <span class="cart-item-price">₹${item.total.toFixed(2)}</span>
                 </div>
-            </div>
-        `;
+            </div>`;
         }).join('');
 
         updateTotals();
@@ -690,7 +745,6 @@
         document.getElementById('grandTotal').textContent = `₹${total.toFixed(2)}`;
         document.getElementById('payAmount').textContent = `₹${total.toFixed(0)}`;
 
-        // Update cart count
         const count = cart.reduce((sum, item) => sum + item.quantity, 0);
         document.getElementById('cartCount').textContent = count;
         const mobileCount = document.getElementById('cartCountMobile');
@@ -699,7 +753,9 @@
         if (floatCount) floatCount.textContent = count;
     }
 
-    // Payment
+    // =========================================================
+    // PAYMENT & ORDER (unchanged)
+    // =========================================================
     function selectPayment(method) {
         paymentMethod = method;
         document.querySelectorAll('.payment-btn').forEach(btn => {
@@ -722,11 +778,9 @@
             customer_name: document.getElementById('customerName').value || null,
             customer_phone: document.getElementById('customerPhone').value || null,
             items: cart,
-            subtotal: subtotal,
-            discount: discount,
+            subtotal, discount,
             discount_type: 'amount',
-            tax: 0,
-            total: total,
+            tax: 0, total,
             payment_method: paymentMethod,
             payment_status: 'paid',
             status: 'completed'
@@ -736,33 +790,30 @@
             showLoading();
             lastOrder = await api.createOrder(orderData);
             hideLoading();
-
             document.getElementById('completedOrderNumber').textContent = `Order #${lastOrder.order_number}`;
             document.getElementById('completedOrderTotal').textContent = `₹${lastOrder.total.toFixed(2)}`;
-
             openModal('printModal');
-
         } catch (error) {
             hideLoading();
             showToast('Failed to create order', 'error');
         }
     }
 
+    // =========================================================
+    // HELD ORDERS (unchanged)
+    // =========================================================
     function holdOrder() {
         if (cart.length === 0) return;
-        // Save to local storage for later
         const holdData = {
-            cart: cart,
+            cart,
             customer_name: document.getElementById('customerName').value,
             customer_phone: document.getElementById('customerPhone').value,
             discount: document.getElementById('discountInput').value,
             timestamp: new Date().toISOString()
         };
-
         let heldOrders = JSON.parse(localStorage.getItem('heldOrders') || '[]');
         heldOrders.push(holdData);
         localStorage.setItem('heldOrders', JSON.stringify(heldOrders));
-
         showToast(t('order_held'));
         newOrder();
     }
@@ -781,8 +832,7 @@
                 <div style="text-align: center; padding: 40px 20px; color: var(--text-muted);">
                     <i class="bi bi-inbox" style="font-size: 3rem;"></i>
                     <p data-i18n="no_held_orders">No held orders</p>
-                </div>
-            `;
+                </div>`;
             document.getElementById('holdCurrentOrderBtn').style.display = 'block';
         } else {
             const lang = getCurrentLang();
@@ -790,14 +840,11 @@
                 const subtotal = order.cart.reduce((sum, item) => sum + item.total, 0);
                 const total = subtotal - (parseFloat(order.discount) || 0);
                 const timestamp = new Date(order.timestamp).toLocaleString();
-
                 return `
                     <div style="background: var(--bg-tertiary); border-radius: 12px; padding: 16px; margin-bottom: 12px;">
                         <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 12px;">
                             <div>
-                                <h5 style="margin: 0 0 4px 0; color: var(--text-primary);">
-                                    ${order.customer_name || 'Guest'}
-                                </h5>
+                                <h5 style="margin: 0 0 4px 0; color: var(--text-primary);">${order.customer_name || 'Guest'}</h5>
                                 <small style="color: var(--text-muted);">${timestamp}</small>
                             </div>
                             <div style="text-align: right;">
@@ -811,8 +858,7 @@
                             <i class="bi bi-arrow-repeat"></i>
                             <span data-i18n="retrieve_held_order">Retrieve</span>
                         </button>
-                    </div>
-                `;
+                    </div>`;
             }).join('');
             document.getElementById('holdCurrentOrderBtn').style.display = 'flex';
         }
@@ -823,28 +869,25 @@
     function retrieveHeldOrder(index) {
         let heldOrders = JSON.parse(localStorage.getItem('heldOrders') || '[]');
         if (index < 0 || index >= heldOrders.length) return;
-
         const holdData = heldOrders[index];
         cart = holdData.cart;
         document.getElementById('customerName').value = holdData.customer_name || '';
         document.getElementById('customerPhone').value = holdData.customer_phone || '';
         document.getElementById('discountInput').value = holdData.discount || 0;
-
-        // Remove from held orders
         heldOrders.splice(index, 1);
         localStorage.setItem('heldOrders', JSON.stringify(heldOrders));
-
         renderCart();
         closeModal('heldOrdersModal');
         showToast('Order retrieved');
     }
 
-
+    // =========================================================
+    // PRINT (unchanged)
+    // =========================================================
     async function printReceipt() {
         if (!lastOrder) return;
         try {
             const receiptData = await api.getReceiptData(lastOrder.id);
-            // Default: use preferred printer type
             await ThermalPrinter.printReceipt(receiptData);
         } catch (error) {
             console.error('Print error:', error);
@@ -860,7 +903,6 @@
             return;
         }
         try {
-            // Set preference
             localStorage.setItem('printerType', 'bluetooth');
             await ThermalPrinter.connectBluetoothPrinter(true);
             const receiptData = await api.getReceiptData(lastOrder.id);
@@ -893,55 +935,57 @@
         renderCart();
     }
 
-    // Mobile cart toggle
+    // =========================================================
+    // MOBILE CART
+    // =========================================================
     function toggleCart() {
-        const cart = document.getElementById('posCart');
+        const cartEl = document.getElementById('posCart');
         const overlay = document.getElementById('cartOverlay');
-        cart.classList.toggle('active');
+        cartEl.classList.toggle('active');
         overlay.classList.toggle('active');
     }
 
     function closeCart() {
-        const cart = document.getElementById('posCart');
+        const cartEl = document.getElementById('posCart');
         const overlay = document.getElementById('cartOverlay');
-        cart.classList.remove('active');
+        cartEl.classList.remove('active');
         overlay.classList.remove('active');
     }
 
-    // Search handler
+    // =========================================================
+    // EVENT LISTENERS
+    // =========================================================
+
+    // Debounced search — 300ms delay, in-memory filter (no server call)
     document.getElementById('productSearch').addEventListener('input', debounce((e) => {
         const activeTab = document.querySelector('.category-tab.active');
         const categoryId = activeTab ? activeTab.dataset.id : 'all';
         renderProducts(categoryId === 'all' ? null : parseInt(categoryId), e.target.value);
     }, 300));
 
-    // Language handler
+    // Language switch — re-render tabs, products, cart
     document.querySelectorAll('.lang-btn').forEach(btn => {
         btn.addEventListener('click', () => {
             setLanguage(btn.dataset.lang);
-            renderCart();  // Re-render to update language-specific content
-            renderProducts();  // Re-render products with new language
+            renderCategoryTabs();
+            renderCart();
+            renderProducts();
         });
     });
 
-    // Check for print parameter
+    // Auto-print from URL param
     function checkPrintParam() {
         const params = new URLSearchParams(window.location.search);
         const printId = params.get('print');
         if (printId) {
-            // Auto-print receipt
             api.getReceiptData(printId).then(async data => {
                 const printerType = localStorage.getItem('printerType') || 'browser';
-                // If Bluetooth preferred and supported, auto-print via Bluetooth
                 if (printerType === 'bluetooth' && navigator.bluetooth) {
                     await ThermalPrinter.autoReconnectPrinter();
                     await ThermalPrinter.printReceiptESCPOSEncode(data);
                 } else if (printerType === 'network') {
-                    try {
-                        await ThermalPrinter.printNetwork(data);
-                    } catch (e) {
-                        await ThermalPrinter.printReceipt(data);
-                    }
+                    try { await ThermalPrinter.printNetwork(data); }
+                    catch (e) { await ThermalPrinter.printReceipt(data); }
                 } else {
                     await ThermalPrinter.printReceipt(data);
                 }
@@ -949,12 +993,12 @@
         }
     }
 
-    // Initialize — use IIFE since DOMContentLoaded may have already fired
-    // when this inline script runs (scripts are at end of body)
+    // =========================================================
+    // INIT
+    // =========================================================
     (async () => {
-        await loadCategories();
-        await loadProducts();
+        await loadPosData();
         checkPrintParam();
     })();
 </script>
-{% endblock %}
+{% endblock %}

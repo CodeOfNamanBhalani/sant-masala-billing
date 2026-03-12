@@ -8,6 +8,8 @@ from flask import Flask, render_template, request, jsonify, send_file
 from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
+from flask_caching import Cache
+from sqlalchemy.orm import joinedload
 from datetime import datetime
 from werkzeug.utils import secure_filename
 import json
@@ -23,14 +25,25 @@ CORS(app)
 app.config['SECRET_KEY'] = 'sant-masala-secret-key-2026'
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get("DATABASE_URL")
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+    'pool_size': 5,
+    'max_overflow': 10,
+    'pool_pre_ping': True,   # keeps connections alive on Render free plan
+    'pool_recycle': 300,
+}
 app.config['UPLOAD_FOLDER'] = 'static/uploads'
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
+
+# Cache configuration (simple in-memory, 5-minute default TTL)
+app.config['CACHE_TYPE'] = 'SimpleCache'
+app.config['CACHE_DEFAULT_TIMEOUT'] = 300
 
 # Allowed file extensions
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
 
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
+cache = Cache(app)
 
 # Ensure upload folder exists
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
@@ -98,6 +111,19 @@ class Product(db.Model):
             'price_per_kg': self.price_per_kg,
             'is_active': self.is_active,
             'is_featured': self.is_featured,
+            'prices': [p.to_dict() for p in self.prices]
+        }
+
+    def to_pos_dict(self):
+        """Lightweight serialization for POS — omits unused admin-only fields."""
+        return {
+            'id': self.id,
+            'name_en': self.name_en,
+            'name_gu': self.name_gu,
+            'category_id': self.category_id,
+            'image': self.image,
+            'unit': self.unit,
+            'price_per_kg': self.price_per_kg,
             'prices': [p.to_dict() for p in self.prices]
         }
 
@@ -314,6 +340,29 @@ def dashboard_stats():
     })
 
 
+
+# ----- POS Combined Data Endpoint (optimized) -----
+@app.route('/api/pos-data', methods=['GET'])
+@cache.cached(timeout=300, key_prefix='pos_data')
+def get_pos_data():
+    """
+    Single endpoint for POS page — returns active products + all categories
+    in ONE round trip with eager loading (no N+1) and server-side caching.
+    Cache is invalidated automatically on any product/category change.
+    """
+    products = Product.query.options(
+        joinedload(Product.prices),
+        joinedload(Product.category)
+    ).filter_by(is_active=True).order_by(Product.name_en).all()
+
+    categories = Category.query.filter_by(is_active=True).order_by(Category.display_order).all()
+
+    return jsonify({
+        'products': [p.to_pos_dict() for p in products],
+        'categories': [{'id': c.id, 'name_en': c.name_en, 'name_gu': c.name_gu} for c in categories]
+    })
+
+
 # ----- Category API -----
 @app.route('/api/categories', methods=['GET'])
 def get_categories():
@@ -334,6 +383,7 @@ def create_category():
     )
     db.session.add(category)
     db.session.commit()
+    cache.delete('pos_data')  # Invalidate POS cache
     return jsonify(category.to_dict()), 201
 
 @app.route('/api/categories/<int:id>', methods=['GET'])
@@ -353,6 +403,7 @@ def update_category(id):
     category.display_order = data.get('display_order', category.display_order)
     category.is_active = data.get('is_active', category.is_active)
     db.session.commit()
+    cache.delete('pos_data')  # Invalidate POS cache
     return jsonify(category.to_dict())
 
 @app.route('/api/categories/<int:id>', methods=['DELETE'])
@@ -360,6 +411,7 @@ def delete_category(id):
     category = Category.query.get_or_404(id)
     db.session.delete(category)
     db.session.commit()
+    cache.delete('pos_data')  # Invalidate POS cache
     return jsonify({'message': 'Category deleted'})
 
 
@@ -368,13 +420,17 @@ def delete_category(id):
 def get_products():
     category_id = request.args.get('category_id')
     active_only = request.args.get('active', 'false').lower() == 'true'
-    
-    query = Product.query
+
+    # Eager-load prices and category in a single JOIN query (eliminates N+1)
+    query = Product.query.options(
+        joinedload(Product.prices),
+        joinedload(Product.category)
+    )
     if category_id:
         query = query.filter_by(category_id=category_id)
     if active_only:
         query = query.filter_by(is_active=True)
-    
+
     products = query.order_by(Product.name_en).all()
     return jsonify([p.to_dict() for p in products])
 
@@ -396,7 +452,7 @@ def create_product():
     )
     db.session.add(product)
     db.session.flush()
-    
+
     # Add prices
     for price_data in data.get('prices', []):
         price = ProductPrice(
@@ -408,8 +464,9 @@ def create_product():
             is_default=price_data.get('is_default', False)
         )
         db.session.add(price)
-    
+
     db.session.commit()
+    cache.delete('pos_data')  # Invalidate POS cache
     return jsonify(product.to_dict()), 201
 
 @app.route('/api/products/<int:id>', methods=['GET'])
@@ -421,7 +478,7 @@ def get_product(id):
 def update_product(id):
     product = Product.query.get_or_404(id)
     data = request.json
-    
+
     product.name_en = data.get('name_en', product.name_en)
     product.name_gu = data.get('name_gu', product.name_gu)
     product.description_en = data.get('description_en', product.description_en)
@@ -433,12 +490,10 @@ def update_product(id):
     product.price_per_kg = data.get('price_per_kg', product.price_per_kg)
     product.is_active = data.get('is_active', product.is_active)
     product.is_featured = data.get('is_featured', product.is_featured)
-    
+
     # Update prices
     if 'prices' in data:
-        # Remove old prices
         ProductPrice.query.filter_by(product_id=product.id).delete()
-        # Add new prices
         for price_data in data.get('prices', []):
             price = ProductPrice(
                 product_id=product.id,
@@ -449,8 +504,9 @@ def update_product(id):
                 is_default=price_data.get('is_default', False)
             )
             db.session.add(price)
-    
+
     db.session.commit()
+    cache.delete('pos_data')  # Invalidate POS cache
     return jsonify(product.to_dict())
 
 @app.route('/api/products/<int:id>', methods=['DELETE'])
@@ -461,6 +517,7 @@ def delete_product(id):
         OrderItem.query.filter_by(product_id=id).update({'product_id': None})
         db.session.delete(product)
         db.session.commit()
+        cache.delete('pos_data')  # Invalidate POS cache
         return jsonify({'message': 'Product deleted'})
     except Exception as e:
         db.session.rollback()

@@ -56,6 +56,7 @@ const api = {
         const query = new URLSearchParams(params).toString();
         return apiRequest(`/products${query ? '?' + query : ''}`);
     },
+    getPosData: () => apiRequest('/pos-data'),
     getProduct: (id) => apiRequest(`/products/${id}`),
     createProduct: (data) => apiRequest('/products', { method: 'POST', body: data }),
     updateProduct: (id, data) => apiRequest(`/products/${id}`, { method: 'PUT', body: data }),
