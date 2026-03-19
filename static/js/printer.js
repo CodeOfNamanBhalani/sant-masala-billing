@@ -369,7 +369,7 @@ const ThermalPrinter = {
         const { shop, order } = receiptData;
 
         // Build item rows — no Sr column, Gujarati item names, Qty, Rate, Total
-        const MIN_ROWS = 8; // minimum rows so bill is never too short
+        const MIN_ROWS = 5; // minimum rows so bill is never too short
         const dataRows = order.items.map(item => {
             const name = item.product_name_gu || item.product_name;
             // For piece/packet: show "2x100g" if qty > 1, else "100g"

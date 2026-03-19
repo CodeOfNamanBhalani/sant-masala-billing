@@ -656,6 +656,13 @@
         closeModal('weightModal');
         renderCart();
         showToast(`${selectedProduct.name_en} added to cart`);
+
+        // Auto-reset search and go back to "All" category
+        const searchInput = document.getElementById('productSearch');
+        if (searchInput && searchInput.value) {
+            searchInput.value = '';
+            filterCategory('all');
+        }
     }
 
     // =========================================================
