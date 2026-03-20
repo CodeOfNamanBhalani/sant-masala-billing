@@ -10,7 +10,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_caching import Cache
 from sqlalchemy.orm import joinedload
-from datetime import datetime
+from datetime import datetime, timedelta
 from werkzeug.utils import secure_filename
 import json
 import os
@@ -667,7 +667,8 @@ def get_orders():
     if date_from:
         query = query.filter(Order.created_at >= datetime.strptime(date_from, '%Y-%m-%d'))
     if date_to:
-        query = query.filter(Order.created_at <= datetime.strptime(date_to, '%Y-%m-%d'))
+        date_to_end = datetime.strptime(date_to, '%Y-%m-%d') + timedelta(days=1)
+        query = query.filter(Order.created_at < date_to_end)
     
     orders = query.order_by(Order.created_at.desc()).all()
     return jsonify([o.to_dict() for o in orders])
@@ -703,16 +704,18 @@ def create_order():
         price = item_data.get('price')
         total = item_data.get('total')
 
-        # Weight-based products (kg / g unit): price = price_per_kg, total = price_per_kg × weight_in_kg
-        if product and product.unit in ['kg', 'g'] and product.price_per_kg:
-            price = product.price_per_kg  # always price per 1 kg
+        # Weight-based products (kg / g unit): recalculate total using the price sent from frontend
+        # (which may be a custom price set by user). Fall back to price_per_kg only if not provided.
+        if product and product.unit in ['kg', 'g']:
+            if not price:
+                price = product.price_per_kg  # fallback if frontend sent nothing
             if weight_unit == 'kg':
                 weight_kg = float(weight or 1)
             elif weight_unit == 'g':
                 weight_kg = float(weight or 1000) / 1000.0
             else:
                 weight_kg = float(weight or 1)
-            total = round(product.price_per_kg * weight_kg, 2)
+            total = round(float(price) * weight_kg, 2)
             quantity = 1  # weight-based items always have quantity = 1
 
         item = OrderItem(

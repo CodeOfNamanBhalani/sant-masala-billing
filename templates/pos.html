@@ -235,6 +235,13 @@
                     <input type="number" class="form-control" id="kgWeightInput" min="0.001" step="0.001"
                         placeholder="e.g. 1.5" oninput="updateKgPricePreview()">
                 </div>
+                <div class="form-group mb-2">
+                    <label class="form-label" style="color:var(--warning);">
+                        <i class="bi bi-pencil-square"></i> Custom Price / kg (optional):
+                    </label>
+                    <input type="number" class="form-control" id="kgCustomPrice" min="0" step="0.01"
+                        placeholder="Leave empty to use default price" oninput="updateKgPricePreview()">
+                </div>
                 <div id="kgPricePreview"
                     style="text-align:right;font-size:1.2rem;font-weight:700;color:var(--primary);min-height:30px;">
                 </div>
@@ -257,6 +264,13 @@
                             <i class="bi bi-plus"></i>
                         </button>
                     </div>
+                </div>
+                <div class="form-group mt-3">
+                    <label class="form-label" style="color:var(--warning);">
+                        <i class="bi bi-pencil-square"></i> Custom Price (optional):
+                    </label>
+                    <input type="number" class="form-control" id="variantCustomPrice" min="0" step="0.01"
+                        placeholder="Leave empty to use selected variant price">
                 </div>
             </div>
         </div>
@@ -550,6 +564,7 @@
             document.getElementById('variantButtonsSection').style.display = 'none';
             document.getElementById('kgRateDisplay').textContent = `\u20b9${selectedProduct.price_per_kg}/kg`;
             document.getElementById('kgWeightInput').value = '';
+            document.getElementById('kgCustomPrice').value = '';
             document.getElementById('kgPricePreview').textContent = '';
             selectedPrice = { id: null, price: selectedProduct.price_per_kg, weight_unit: 'kg' };
         } else {
@@ -574,6 +589,7 @@
                 selectedPrice = { id: null, weight: 1, weight_unit: 'pc', price: 0 };
             }
             document.getElementById('modalQty').value = 1;
+            document.getElementById('variantCustomPrice').value = '';
         }
 
         openModal('weightModal');
@@ -581,10 +597,13 @@
 
     function updateKgPricePreview() {
         const weightVal = parseFloat(document.getElementById('kgWeightInput').value);
+        const customPrice = parseFloat(document.getElementById('kgCustomPrice').value);
         const preview = document.getElementById('kgPricePreview');
-        if (selectedProduct && selectedProduct.price_per_kg && weightVal > 0) {
-            const total = (selectedProduct.price_per_kg * weightVal).toFixed(2);
-            preview.textContent = `Total: \u20b9${total}`;
+        const pricePerKg = (customPrice > 0) ? customPrice : (selectedProduct && selectedProduct.price_per_kg);
+        if (pricePerKg && weightVal > 0) {
+            const total = (pricePerKg * weightVal).toFixed(2);
+            const customTag = (customPrice > 0) ? ' <span style="font-size:0.75rem;color:var(--warning);">(custom price)</span>' : '';
+            preview.innerHTML = `Total: \u20b9${total}${customTag}`;
         } else {
             preview.textContent = '';
         }
@@ -614,7 +633,8 @@
                 showToast('Please enter a valid weight in kg', 'warning');
                 return;
             }
-            const pricePerKg = selectedProduct.price_per_kg;
+            const customPrice = parseFloat(document.getElementById('kgCustomPrice').value);
+            const pricePerKg = (customPrice > 0) ? customPrice : selectedProduct.price_per_kg;
             const total = parseFloat((pricePerKg * weightVal).toFixed(2));
 
             cart.push({
@@ -631,7 +651,10 @@
             });
         } else {
             const qty = parseInt(document.getElementById('modalQty').value);
-            const existingIndex = cart.findIndex(item =>
+            const variantCustomPrice = parseFloat(document.getElementById('variantCustomPrice').value);
+            const effectivePrice = (variantCustomPrice > 0) ? variantCustomPrice : selectedPrice.price;
+            // For custom price, don't merge with existing — treat as a new item row
+            const existingIndex = (variantCustomPrice > 0) ? -1 : cart.findIndex(item =>
                 item.product_id === selectedProduct.id && item.price_id == selectedPrice.id
             );
             if (existingIndex >= 0) {
@@ -647,8 +670,8 @@
                     weight: selectedPrice.weight,
                     weight_unit: selectedPrice.weight_unit,
                     quantity: qty,
-                    price: selectedPrice.price,
-                    total: qty * selectedPrice.price
+                    price: effectivePrice,
+                    total: qty * effectivePrice
                 });
             }
         }
